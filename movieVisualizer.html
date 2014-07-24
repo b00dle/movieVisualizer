@@ -83,7 +83,7 @@
 							.orient("bottom");
 				
 				yAxis = d3.svg.axis()
-							.scale(yearScaleY)//.scale(rankScaleY)
+							.scale(rankScaleY)//.scale(yearScaleY)//
 							.orient("left");
 			}
 			
@@ -96,7 +96,7 @@
 						return posScaleX(i);
 					})
 					.attr("cy", function(d) {
-						return yearScaleY(d.Year);//rankScaleY(d.Rank);
+						return rankScaleY(d.Rank);//yearScaleY(d.Year);//
 					})
 					.attr("r", function(d) {
 						return voteScaleRadius(d.Votes);
@@ -105,8 +105,11 @@
 						var factor = yearScaleNorm(d.Year);
 						return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
 					})
-					.attr("stroke", "black")
-					.attr("stroke-width", 2);
+					.attr("stroke", "white")
+					.attr("stroke-width", 0.2)
+					.sort(function(a, b) { 
+						return voteScaleRadius(b.Votes) - voteScaleRadius(a.Votes);
+					});
 					
 				svg.append("g")
 					.attr("class", "x axis")
