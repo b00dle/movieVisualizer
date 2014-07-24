@@ -32,7 +32,8 @@
 			var yAxis;
 			
 			var dataset;
-			var countries = [];
+			var countries = {};
+			var ranking = {};
 			var posScaleX;
 			var rankScaleY;
 			var yearScaleY;
@@ -41,12 +42,15 @@
 			
 			var posFisheyeScaleX;
 			var xAxesFisheye;
+			var updateFisheye = false;
+			var yAxisAge = false;
 			
 			d3.csv("top250movies.csv", function(data) {
 				dataset = data;
-				dataset.forEach(function(d){
+				dataset.forEach(function(d, i){
 					var s = d.Country.toString();
-					countries.push(s.split("-"));
+					countries[d.Title] = s.split("-");
+					ranking[d.Title] = i;
 				});
 				
 				initDia();
@@ -57,6 +61,21 @@
 				w = 1280;//720;
 				h = 720;//480;
 				diaPadding = 50;
+				
+				body.on("keypress", function() {
+					switch(d3.event.keyCode) {
+						case 112: 	
+							updateFisheye = !updateFisheye;
+							break;
+						case 113:
+							resetXpos();
+							break;
+						case 115:
+							yAxisAge = !yAxisAge;
+							setYScale();
+							break;
+					}
+				});
 				
 				svg = body.append("svg")
 					.attr("width", w)
@@ -92,7 +111,7 @@
 							.orient("bottom");
 				
 				yAxis = d3.svg.axis()
-							.scale(rankScaleY)//.scale(yearScaleY)//
+							.scale(rankScaleY)//.scale(yearScaleY)
 							.orient("left");
 							
 				xAxisFisheye = d3.svg.axis()
@@ -104,26 +123,26 @@
 			
 			function drawDia() {
 				
-				var element = svg.append("g")
+				element = svg.append("g")
 					.attr("class", "elements")
 					.selectAll("circle")
 					.data(dataset)
 					.enter()
 					.append("circle")
 					.call(computeAttributes)
-					/*.sort(function(a, b) { 
+					.sort(function(a, b) { 
 						return voteScaleRadius(b.Votes) - voteScaleRadius(a.Votes);
-					});*/
-					
-				/*svg.append("g")
-					.attr("class", "x axis")
-					.attr("transform", "translate(0," + (h-diaPadding) + ")")
-					.call(xAxis);*/
+					});
 					
 				svg.append("g")
 					.attr("class", "x axis")
 					.attr("transform", "translate(0," + (h-diaPadding) + ")")
-					.call(xAxisFisheye);
+					.call(xAxis);
+					
+				/*svg.append("g")
+					.attr("class", "x axis")
+					.attr("transform", "translate(0," + (h-diaPadding) + ")")
+					.call(xAxisFisheye);*/
 					
 				svg.append("g")
 					.attr("class","y axis")
@@ -131,25 +150,27 @@
 					.call(yAxis);
 					
 				svg.on("mousemove", function() {
-					var mouse = d3.mouse(this);
-					posFisheyeScaleX.distortion(2.5).focus(mouse[0]);
-									
-					element.call(updateXpos);
-					
-					svg.select(".x.axis")
-						.call(xAxisFisheye);
+					if(updateFisheye) {
+						var mouse = d3.mouse(this);
+						posFisheyeScaleX.distortion(2.5).focus(mouse[0]);
+										
+						element.call(updateXpos);
+						
+						svg.select(".x.axis")
+							.call(xAxisFisheye);
+					}
 				});
 			}
 			
 			function updateXpos(element) {
-				element.attr("cx", function(d, i) {
-							return posFisheyeScaleX(i);//posScaleX(i);
-						});
+				element.attr("cx", function(d) {
+							return posFisheyeScaleX(ranking[d.Title]);//posScaleX(i);
+				});
 			}
 			
 			function computeAttributes(element) {
-				element.attr("cx", function(d, i) {
-							return posFisheyeScaleX(i);//posScaleX(i);
+				element.attr("cx", function(d) {
+							return posScaleX(ranking[d.Title]);
 						})
 						.attr("cy", function(d) {
 							return rankScaleY(d.Rank);//yearScaleY(d.Year);//
@@ -163,6 +184,50 @@
 						})
 						.attr("stroke", "white")
 						.attr("stroke-width", 0.2);
+			}
+			
+			function resetXpos() {
+				element.transition()
+						.duration(1000)
+						.attr("cx", function(d) {
+								return posScaleX(ranking[d.Title]);
+						});
+						
+				svg.select(".x.axis")
+					.transition()
+					.duration(1000)
+					.call(xAxis);
+			}
+			
+			function setYScale() {
+				if(yAxisAge) {
+					element.transition()
+							.duration(1000)
+							.attr("cy", function(d) {
+								return yearScaleY(d.Year);
+							});
+					
+					yAxis.scale(yearScaleY);
+					
+					svg.select(".y.axis")
+						.transition()
+						.duration(500)
+						.call(yAxis);								
+				}
+				else {
+					element.transition()
+							.duration(1000)
+							.attr("cy", function(d) {
+								return rankScaleY(d.Rank);
+							});
+					
+					yAxis.scale(rankScaleY);
+					
+					svg.select(".y.axis")
+						.transition()
+						.duration(500)
+						.call(yAxis);
+				}
 			}
 			
         </script>		
