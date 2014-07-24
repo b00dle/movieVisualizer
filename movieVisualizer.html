@@ -22,8 +22,9 @@
     <body>
 		<script type="text/javascript">
 			var body = d3.select("body");
-			
+					
 			var svg;
+			var element;
 			var w;
 			var h;
 			var diaPadding;
@@ -37,6 +38,9 @@
 			var yearScaleY;
 			var yearScaleNorm;
 			var voteScaleRadius;
+			
+			var posFisheyeScaleX;
+			var xAxesFisheye;
 			
 			d3.csv("top250movies.csv", function(data) {
 				dataset = data;
@@ -78,6 +82,11 @@
 							.domain([ d3.min(dataset,function(d) { return d.Votes; }) , d3.max(dataset,function(d) { return d.Votes; }) ])
 							.range([5,20]);
 							
+				posFisheyeScaleX = d3.fisheye
+									.scale(d3.scale.linear)
+									.domain([ d3.max(dataset, function(d,i) { return i; })+10 , 1 ])
+									.range([diaPadding, w-diaPadding]);
+				
 				xAxis = d3.svg.axis()
 							.scale(posScaleX)
 							.orient("bottom");
@@ -85,41 +94,75 @@
 				yAxis = d3.svg.axis()
 							.scale(rankScaleY)//.scale(yearScaleY)//
 							.orient("left");
+							
+				xAxisFisheye = d3.svg.axis()
+								.scale(posFisheyeScaleX)
+								.orient("bottom");
+								//.tickFormat(d3.format(",d"))
+								//.tickSize(-h);
 			}
 			
 			function drawDia() {
-				svg.selectAll("circle")
+				
+				var element = svg.append("g")
+					.attr("class", "elements")
+					.selectAll("circle")
 					.data(dataset)
 					.enter()
 					.append("circle")
-					.attr("cx", function(d, i) {
-						return posScaleX(i);
-					})
-					.attr("cy", function(d) {
-						return rankScaleY(d.Rank);//yearScaleY(d.Year);//
-					})
-					.attr("r", function(d) {
-						return voteScaleRadius(d.Votes);
-					})
-					.attr("fill", function(d) {
-						var factor = yearScaleNorm(d.Year);
-						return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
-					})
-					.attr("stroke", "white")
-					.attr("stroke-width", 0.2)
-					.sort(function(a, b) { 
+					.call(computeAttributes)
+					/*.sort(function(a, b) { 
 						return voteScaleRadius(b.Votes) - voteScaleRadius(a.Votes);
-					});
+					});*/
+					
+				/*svg.append("g")
+					.attr("class", "x axis")
+					.attr("transform", "translate(0," + (h-diaPadding) + ")")
+					.call(xAxis);*/
 					
 				svg.append("g")
 					.attr("class", "x axis")
 					.attr("transform", "translate(0," + (h-diaPadding) + ")")
-					.call(xAxis);
+					.call(xAxisFisheye);
 					
 				svg.append("g")
 					.attr("class","y axis")
 					.attr("transform", "translate(" + diaPadding + ",0)")
-					.call(yAxis)
+					.call(yAxis);
+					
+				svg.on("mousemove", function() {
+					var mouse = d3.mouse(this);
+					posFisheyeScaleX.distortion(2.5).focus(mouse[0]);
+									
+					element.call(updateXpos);
+					
+					svg.select(".x.axis")
+						.call(xAxisFisheye);
+				});
+			}
+			
+			function updateXpos(element) {
+				element.attr("cx", function(d, i) {
+							return posFisheyeScaleX(i);//posScaleX(i);
+						});
+			}
+			
+			function computeAttributes(element) {
+				element.attr("cx", function(d, i) {
+							return posFisheyeScaleX(i);//posScaleX(i);
+						})
+						.attr("cy", function(d) {
+							return rankScaleY(d.Rank);//yearScaleY(d.Year);//
+						})
+						.attr("r", function(d) {
+							return voteScaleRadius(d.Votes);
+						})
+						.attr("fill", function(d) {
+							var factor = yearScaleNorm(d.Year);
+							return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
+						})
+						.attr("stroke", "white")
+						.attr("stroke-width", 0.2);
 			}
 			
         </script>		
