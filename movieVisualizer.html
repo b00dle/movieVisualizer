@@ -50,6 +50,10 @@
 				dataset.forEach(function(d, i){
 					var s = d.Country.toString();
 					countries[d.Title] = s.split("-");
+					d["Countries"] = [];
+					s.split("-").forEach(function(c) {
+						d["Countries"].push({Country:c, Count:1});
+					});
 					ranking[d.Title] = i;
 				});
 				
@@ -57,25 +61,14 @@
 				drawDia();
 			});
 			
+			//doPie();
+			
 			function initDia() {
-				w = 1280;//720;
-				h = 720;//480;
+				w = 720;//1280;//
+				h = 480;//720;//
 				diaPadding = 50;
 				
-				body.on("keypress", function() {
-					switch(d3.event.keyCode) {
-						case 112: 	
-							updateFisheye = !updateFisheye;
-							break;
-						case 113:
-							resetXpos();
-							break;
-						case 115:
-							yAxisAge = !yAxisAge;
-							setYScale();
-							break;
-					}
-				});
+				registerKeyboard();
 				
 				svg = body.append("svg")
 					.attr("width", w)
@@ -184,6 +177,57 @@
 						})
 						.attr("stroke", "white")
 						.attr("stroke-width", 0.2);
+				
+				var pie = d3.layout.pie()
+					.value(function(d) {
+						return d.Count;
+					});
+
+				var color = d3.scale.category10();
+				
+				element.each(function(d,i) {
+					var innerRadius = this.r.baseVal.value;
+					var outerRadius = innerRadius + 2;
+					var cx = this.cx.baseVal.value;
+					var cy = this.cy.baseVal.value;
+					
+					var arc = d3.svg.arc()
+						.innerRadius(innerRadius)
+						.outerRadius(outerRadius);
+					
+					var arcs = svg.selectAll("g.circle.arc")
+									.data(pie(d.Countries))
+									.enter()
+									.append("g")
+									.attr("class", "circle.arc")
+									.attr("transform", "translate(" + cx + ", " + cy +")");
+									//.attr("cx", cx)
+									//.attr("cy", cy);
+					
+					arcs.append("path")
+						.attr("fill", function(da, i) {
+							return color(i);
+						})
+						.attr("d", arc);
+				});
+				
+			}
+			
+			function registerKeyboard() {
+				body.on("keypress", function() {
+					switch(d3.event.keyCode) {
+						case 112: 	
+							updateFisheye = !updateFisheye;
+							break;
+						case 113:
+							resetXpos();
+							break;
+						case 115:
+							yAxisAge = !yAxisAge;
+							setYScale();
+							break;
+					}
+				});
 			}
 			
 			function resetXpos() {
@@ -228,6 +272,65 @@
 						.duration(500)
 						.call(yAxis);
 				}
+			}
+			
+			function arrayContains(a, obj) {
+				for (var i = 0; i < a.length; i++) {
+					if (a[i] === obj) {
+						return true;
+					}
+				}
+				return false;
+			}
+			
+			function hasOwnProperty(obj, prop) {
+				var proto = obj.__proto__ || obj.constructor.prototype;
+				return (prop in obj) &&
+					(!(prop in proto) || proto[prop] !== obj[prop]);
+			}
+			
+			function doPie() {
+				var sampleData = [{Country:"USA",Count:2},{Country:"Germany",Count:1},{Country:"Italy",Count:3},{Country:"France",Count:1}];
+				var pie = d3.layout.pie()
+								.value(function(d) {
+									return d.Count;
+								});
+				
+				var width = 300;
+				var height = 300;
+				var outerRadius = width / 2;
+				var innerRadius = width / 3;
+				var color = d3.scale.category10();
+				
+				var arc = d3.svg.arc()
+								.innerRadius(innerRadius)
+								.outerRadius(outerRadius);
+								
+				var svg2 = body.append("svg")
+								.attr("width", width)
+								.attr("height", height);
+				
+				var arcs = svg2.selectAll("g.arc")
+								.data(pie(sampleData))
+								.enter()
+								.append("g")
+								.attr("class", "arc")
+								.attr("transform", "translate(" + outerRadius + ", " + outerRadius + ")");
+				
+				arcs.append("path")
+					.attr("fill", function(d, i) {
+								return color(i);
+					})
+					.attr("d", arc);
+					
+				arcs.append("text")
+					.attr("transform", function(d) {
+						return "translate(" + arc.centroid(d) + ")";
+					})
+					.attr("text-anchor", "middle")
+					.text(function(d) {
+							return d.data.Country;
+					});
 			}
 			
         </script>		
