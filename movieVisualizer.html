@@ -32,7 +32,7 @@
 			var yAxis;
 			
 			var dataset;
-			var countries = {};
+			var countryColors = {};
 			var ranking = {};
 			var posScaleX;
 			var rankScaleY;
@@ -45,14 +45,21 @@
 			var updateFisheye = false;
 			var yAxisAge = false;
 			
+			var color = d3.scale.category20();
+			
 			d3.csv("top250movies.csv", function(data) {
 				dataset = data;
+				countryColors["Blue"] = color(0);
+				var index = 1;
 				dataset.forEach(function(d, i){
 					var s = d.Country.toString();
-					countries[d.Title] = s.split("-");
 					d["Countries"] = [];
 					s.split("-").forEach(function(c) {
 						d["Countries"].push({Country:c, Count:1});
+						if(!hasOwnProperty(countryColors, c)) {
+							countryColors[c] = color(index);
+							index += 1;
+						}
 					});
 					ranking[d.Title] = i;
 				});
@@ -64,8 +71,8 @@
 			//doPie();
 			
 			function initDia() {
-				w = 720;//1280;//
-				h = 480;//720;//
+				w = 1280;//720;//
+				h = 720;//480;//
 				diaPadding = 50;
 				
 				registerKeyboard();
@@ -126,6 +133,37 @@
 					.sort(function(a, b) { 
 						return voteScaleRadius(b.Votes) - voteScaleRadius(a.Votes);
 					});
+				
+				var pie = d3.layout.pie()
+					.value(function(d) {
+						return d.Count;
+					});
+				
+				element.each(function(d,i) {
+					var innerRadius = this.r.baseVal.value;
+					var outerRadius = innerRadius + 2;
+					var cx = this.cx.baseVal.value;
+					var cy = this.cy.baseVal.value;
+					
+					var arc = d3.svg.arc()
+						.innerRadius(innerRadius)
+						.outerRadius(outerRadius);
+					
+					var arcs = svg.selectAll("g.circle.arc")
+									.data(pie(d.Countries))
+									.enter()
+									.append("g")
+									.attr("class", "circle.arc." + i)
+									.attr("transform", "translate(" + cx + ", " + cy +")");
+									//.attr("cx", cx)
+									//.attr("cy", cy);
+									
+					arcs.append("path")
+						.attr("fill", function(da, i) {
+							return countryColors[da.data.Country];
+						})
+						.attr("d", arc);
+				});
 					
 				svg.append("g")
 					.attr("class", "x axis")
@@ -176,41 +214,7 @@
 							return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
 						})
 						.attr("stroke", "white")
-						.attr("stroke-width", 0.2);
-				
-				var pie = d3.layout.pie()
-					.value(function(d) {
-						return d.Count;
-					});
-
-				var color = d3.scale.category10();
-				
-				element.each(function(d,i) {
-					var innerRadius = this.r.baseVal.value;
-					var outerRadius = innerRadius + 2;
-					var cx = this.cx.baseVal.value;
-					var cy = this.cy.baseVal.value;
-					
-					var arc = d3.svg.arc()
-						.innerRadius(innerRadius)
-						.outerRadius(outerRadius);
-					
-					var arcs = svg.selectAll("g.circle.arc")
-									.data(pie(d.Countries))
-									.enter()
-									.append("g")
-									.attr("class", "circle.arc")
-									.attr("transform", "translate(" + cx + ", " + cy +")");
-									//.attr("cx", cx)
-									//.attr("cy", cy);
-					
-					arcs.append("path")
-						.attr("fill", function(da, i) {
-							return color(i);
-						})
-						.attr("d", arc);
-				});
-				
+						.attr("stroke-width", 0.2);				
 			}
 			
 			function registerKeyboard() {
