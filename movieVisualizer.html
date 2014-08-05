@@ -13,6 +13,24 @@
 				font-family: sans-serif;
 				font-size: 11px;
 			}
+			
+			.node circle {
+			  fill: #fff;
+			  stroke: steelblue;
+			  stroke-width: 1.5px;
+			}
+
+			.node {
+			  font: 10px sans-serif;
+			}
+
+			.link {
+			  fill: none;
+			  stroke: #ccc;
+			  stroke-width: 1.5px;
+			}
+
+
 		</style>	
 		<meta charset="utf-8">
         <title>D3 Page Template</title>
@@ -23,7 +41,10 @@
 		<script type="text/javascript">
 			var body = d3.select("body");
 					
-			var svg;
+			var svgCartesian;
+			var svgPie;
+			var svgRadial;
+			var svgGraph;
 			var element;
 			var w;
 			var h;
@@ -33,6 +54,8 @@
 			
 			var dataset;
 			var countryColors = {};
+			var countries = [];
+			var movies = []
 			var ranking = {};
 			var posScaleX;
 			var rankScaleY;
@@ -50,8 +73,11 @@
 			d3.csv("top250movies.csv", function(data) {
 				dataset = data;
 				countryColors["Blue"] = color(0);
+				
 				var index = 1;
+				var tempCountries = {};
 				dataset.forEach(function(d, i){
+					movies.push(d.Title);
 					var s = d.Country.toString();
 					d["Countries"] = [];
 					s.split("-").forEach(function(c) {
@@ -60,24 +86,37 @@
 							countryColors[c] = color(index);
 							index += 1;
 						}
+						if(!hasOwnProperty(tempCountries, c)) {
+							tempCountries[c] = {Name:c, Count:1, Active:false};
+						}
+						else {
+							tempCountries[c].Count += 1;
+						}
 					});
 					ranking[d.Title] = i;
 				});
 				
+				for(var k in tempCountries)
+					countries.push(tempCountries[k]);
+				
+				countries.sort(function(a,b) {
+					return b.Count - a.Count;
+				});
+				
 				initDia();
 				drawDia();
+				doGraph();
+				//doRadialCluster();
 			});
 			
-			//doPie();
-			
 			function initDia() {
-				w = 1280;//720;//
-				h = 720;//480;//
+				w = 720;//1280;//
+				h = 480;//720;//
 				diaPadding = 50;
 				
 				registerKeyboard();
 				
-				svg = body.append("svg")
+				svgCartesian = body.append("svg")
 					.attr("width", w)
 					.attr("height", h);
 					
@@ -123,7 +162,7 @@
 			
 			function drawDia() {
 				
-				element = svg.append("g")
+				element = svgCartesian.append("g")
 					.attr("class", "elements")
 					.selectAll("circle")
 					.data(dataset)
@@ -133,7 +172,29 @@
 					.sort(function(a, b) { 
 						return voteScaleRadius(b.Votes) - voteScaleRadius(a.Votes);
 					});
+					
+				element.on("mouseover", function(d) {
+					var mouse = d3.mouse(this); 
+					var xPos = parseFloat(d3.select(this).attr("cx"));
+					var yPos = parseFloat(d3.select(this).attr("cy")) - 5;
+					
+					//doPie(d);
+					
+					d3.select(this).transition()
+									.duration(500)
+									.attr("fill", "orange");
+				});
 				
+				element.on("mouseout", function() {
+					//d3.select("#pie").remove();
+					d3.select(this).transition().duration(500)
+							.attr("fill", function(d) {
+								var factor = yearScaleNorm(d.Year);
+								return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
+							});
+				});
+				
+				/*
 				var pie = d3.layout.pie()
 					.value(function(d) {
 						return d.Count;
@@ -145,11 +206,11 @@
 					var cx = this.cx.baseVal.value;
 					var cy = this.cy.baseVal.value;
 					
-					var arc = d3.svg.arc()
+					var arc = d3.svgCartesian.arc()
 						.innerRadius(innerRadius)
 						.outerRadius(outerRadius);
 					
-					var arcs = svg.selectAll("g.circle.arc")
+					var arcs = svgCartesian.selectAll("g.circle.arc")
 									.data(pie(d.Countries))
 									.enter()
 									.append("g")
@@ -164,30 +225,31 @@
 						})
 						.attr("d", arc);
 				});
+				*/
 					
-				svg.append("g")
+				svgCartesian.append("g")
 					.attr("class", "x axis")
 					.attr("transform", "translate(0," + (h-diaPadding) + ")")
 					.call(xAxis);
 					
-				/*svg.append("g")
+				/*svgCartesian.append("g")
 					.attr("class", "x axis")
 					.attr("transform", "translate(0," + (h-diaPadding) + ")")
 					.call(xAxisFisheye);*/
 					
-				svg.append("g")
+				svgCartesian.append("g")
 					.attr("class","y axis")
 					.attr("transform", "translate(" + diaPadding + ",0)")
 					.call(yAxis);
 					
-				svg.on("mousemove", function() {
+				svgCartesian.on("mousemove", function() {
 					if(updateFisheye) {
 						var mouse = d3.mouse(this);
-						posFisheyeScaleX.distortion(2.5).focus(mouse[0]);
+						posFisheyeScaleX.distortion(5).focus(mouse[0]);
 										
 						element.call(updateXpos);
 						
-						svg.select(".x.axis")
+						svgCartesian.select(".x.axis")
 							.call(xAxisFisheye);
 					}
 				});
@@ -241,7 +303,7 @@
 								return posScaleX(ranking[d.Title]);
 						});
 						
-				svg.select(".x.axis")
+				svgCartesian.select(".x.axis")
 					.transition()
 					.duration(1000)
 					.call(xAxis);
@@ -257,7 +319,7 @@
 					
 					yAxis.scale(yearScaleY);
 					
-					svg.select(".y.axis")
+					svgCartesian.select(".y.axis")
 						.transition()
 						.duration(500)
 						.call(yAxis);								
@@ -271,7 +333,7 @@
 					
 					yAxis.scale(rankScaleY);
 					
-					svg.select(".y.axis")
+					svgCartesian.select(".y.axis")
 						.transition()
 						.duration(500)
 						.call(yAxis);
@@ -293,15 +355,52 @@
 					(!(prop in proto) || proto[prop] !== obj[prop]);
 			}
 			
-			function doPie() {
-				var sampleData = [{Country:"USA",Count:2},{Country:"Germany",Count:1},{Country:"Italy",Count:3},{Country:"France",Count:1}];
+			function doPie(data) {
+				/*
+				var pie = d3.layout.pie()
+					.value(function(d) {
+						return d.Count;
+					});
+				
+				element.each(function(d,i) {
+					var innerRadius = this.r.baseVal.value;
+					var outerRadius = innerRadius + 2;
+					var cx = this.cx.baseVal.value;
+					var cy = this.cy.baseVal.value;
+					
+					var arc = d3.svgCartesian.arc()
+						.innerRadius(innerRadius)
+						.outerRadius(outerRadius);
+					
+					var arcs = svgCartesian.selectAll("g.circle.arc")
+									.data(pie(d.Countries))
+									.enter()
+									.append("g")
+									.attr("class", "circle.arc." + i)
+									.attr("transform", "translate(" + cx + ", " + cy +")");
+									//.attr("cx", cx)
+									//.attr("cy", cy);
+									
+					arcs.append("path")
+						.attr("fill", function(da, i) {
+							return countryColors[da.data.Country];
+						})
+						.attr("d", arc);
+				});
+				*/
+				
+				svgCartesian = body.append("svg")
+					.attr("width", Math.floor(w/4))
+					.attr("height", h)
+					.attr("id", "pie");
+				
 				var pie = d3.layout.pie()
 								.value(function(d) {
 									return d.Count;
 								});
 				
-				var width = 300;
-				var height = 300;
+				var width = Math.floor(w/4);
+				var height = h;
 				var outerRadius = width / 2;
 				var innerRadius = width / 3;
 				var color = d3.scale.category10();
@@ -309,21 +408,25 @@
 				var arc = d3.svg.arc()
 								.innerRadius(innerRadius)
 								.outerRadius(outerRadius);
-								
-				var svg2 = body.append("svg")
-								.attr("width", width)
-								.attr("height", height);
 				
-				var arcs = svg2.selectAll("g.arc")
-								.data(pie(sampleData))
+				color(0);
+				
+				var tx = width/2;
+				var ty = height/2;
+				
+				var arcs = svgCartesian.selectAll("g.arc")
+								.data(pie(data.Countries))
 								.enter()
 								.append("g")
 								.attr("class", "arc")
-								.attr("transform", "translate(" + outerRadius + ", " + outerRadius + ")");
+								.attr("transform", "translate(" + tx + ", " + ty + ")");
 				
 				arcs.append("path")
+					.attr("fill", "white")
+					.transition()
+					.duration(500)
 					.attr("fill", function(d, i) {
-								return color(i);
+								return color(i+1);
 					})
 					.attr("d", arc);
 					
@@ -331,10 +434,225 @@
 					.attr("transform", function(d) {
 						return "translate(" + arc.centroid(d) + ")";
 					})
+					.attr("fill", "white")
+					.transition()
+					.duration(500)
+					.attr("fill", "black")
 					.attr("text-anchor", "middle")
 					.text(function(d) {
 							return d.data.Country;
 					});
+			}
+			
+			function doRadialCluster() {
+				var radius = 960 / 2;
+				
+				var cluster = d3.layout.cluster()
+					.size([360, radius - 120]);
+					
+				var diagonal = d3.svg.diagonal.radial()
+									.projection(function(d) { 
+										return [d.y, d.x / 180 * Math.PI]; 
+									});
+									
+				var svgRadial = d3.select("body").append("svg")
+									.attr("width", radius * 2)
+									.attr("height", radius * 2)
+									.append("g")
+									.attr("transform", "translate(" + radius + "," + radius + ")");
+									
+				d3.json("flare.json", function(error, root) {
+					var nodes = cluster.nodes(root);
+					
+					var link = svgRadial.selectAll("path.link")
+										.data(cluster.links(nodes))
+										.enter()
+										.append("path")
+										.attr("class", "link")
+										.attr("d", diagonal);
+										
+					var node = svgRadial.selectAll("g.node")
+								.data(nodes)
+								.enter()
+								.append("g")
+								.attr("class", "node")
+								.attr("transform", function(d) {
+									return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")";
+								});
+					
+					node.append("circle")
+						.attr("r", 4.5);
+						
+					node.append("text")
+						.attr("dy", ".31em")
+						.attr("text-anchor", function(d) {
+							return d.x < 180 ? "start" : "end";
+						})
+						.attr("transform", function(d) {
+							return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)";
+						})
+						.text(function(d) {
+							return d.name;
+						});
+				});	
+				d3.select(self.frameElement).style("height", radius * 2 + "px");						
+			}
+			
+			function doGraph() {
+				var countryNames = [];
+				countries.forEach(function(c) {
+					countryNames.push(c.Name);
+				});
+				
+				var graphCountryScaleY = d3.scale.ordinal()
+							.domain(countryNames)
+							.rangeRoundBands([20, h-20], 0.02);
+							
+				var graphMovieScaleY = d3.scale.ordinal()
+							.domain(movies)
+							.rangeRoundBands([20, h-20], 0.02);
+				
+				var countScaleRadius = d3.scale.linear()
+							.domain([d3.min(countries,function(d) { return d.Count; }), d3.max(countries,function(d) { return d.Count; })])
+							.range([3, 10]);
+				
+				svgGraph = body.append("svg")
+					.attr("width", w)
+					.attr("height", h);
+					
+				var movieElement = svgGraph.append("g")
+					.attr("class", "elements")
+					.selectAll("circle")
+					.data(countries)
+					.enter()
+					.append("circle");
+				
+				movieElement.attr("cx", diaPadding)
+						.attr("cy", function(d) {
+							return graphCountryScaleY(d.Name);
+						})
+						.attr("r", function(d) {
+							return 4;//return countScaleRadius(d.Count);
+						})
+						.attr("fill", "rgb(245,245,245)")
+						.attr("stroke", "rgb(0,20,80)")
+						.attr("stroke-width", 0.4);
+				
+				movieElement.on("click", function(d) {
+					d.Active = !d.Active;
+					if(d.Active) {
+						d3.select(this).transition()
+										.duration(500)
+										.attr("fill", "orange");
+					}
+					else {
+						d3.select(this).transition()
+										.duration(500)
+										.attr("fill", "rgb(245,245,245)");
+					}
+					
+					flipElementStrokeStyle(d.Name, d.Active);
+				});
+				
+				/*movieElement.on("mouseover", function(d) {
+					d3.select(this).transition()
+									.duration(500)
+									.attr("fill", "orange");
+					
+					var country = d.Name;
+													
+					element.transition()
+							.duration(200)
+							.attr("stroke-width",function(da) {
+								var fromCountry = false;
+								da.Countries.forEach(function(c) {
+									if(c["Country"] === country)
+										fromCountry = true;
+								});
+								if(fromCountry)
+									return 3.0;
+								else
+									return 0.2;
+							})
+							.transition()
+							.duration(200)
+							.attr("stroke",function(da) {
+								var fromCountry = false;
+								da.Countries.forEach(function(c) {
+									if(c["Country"] === country)
+										fromCountry = true;
+								});
+								if(fromCountry)
+									return "orange";
+								else
+									return "white";
+							});
+				});
+				
+				movieElement.on("mouseout", function(d) {
+									d3.select(this).transition()
+													.duration(500)
+													.attr("fill", "rgb(245,245,245)");
+									
+									element.transition()
+											.duration(200)
+											.attr("stroke-width", 0.2)
+											.transition()
+											.duration(200)
+											.attr("stroke", "white");
+				});*/
+				
+				svgGraph.selectAll("text")
+						.data(countries)
+						.enter()
+						.append("text")
+						.attr("x",  diaPadding)
+						.attr("y", function(d) {
+							return graphCountryScaleY(d.Name);
+						})
+						.attr("transform", "translate(8,4)")
+						.attr("font-family", "sans-serif")
+						.attr("font-size", "11px")
+						.text(function(d) {
+							return d.Name;// + " (" + d.Count + " Movies)";
+						});
+				
+			}
+			
+			function flipElementStrokeStyle(name, isActive) {
+				element.transition()
+						.duration(200)
+						.attr("stroke-width",function(da) {
+							var fromCountry = false;
+							da.Countries.forEach(function(c) {
+								if(c["Country"] === name)
+									fromCountry = true;
+							});
+							if(fromCountry) {
+								if(isActive)
+									return 3.0;
+								else
+									return 0.2;
+							}
+							else
+								return d3.select(this).attr("stroke-width");
+						})
+						.transition()
+						.duration(200)
+						.attr("stroke",function(da) {
+							var fromCountry = false;
+							da.Countries.forEach(function(c) {
+								if(c["Country"] === name)
+									fromCountry = true;
+							});
+							if(fromCountry)
+								if(isActive)
+									return "orange";
+								else
+									return "white";
+							else
+								return d3.select(this).attr("stroke");
+						});
 			}
 			
         </script>		
