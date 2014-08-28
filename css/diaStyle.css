@@ -11,17 +11,38 @@
 }
 
 .node circle {
-  fill: #fff;
-  stroke: steelblue;
-  stroke-width: 1.5px;
+	fill: #fff;
+	stroke: steelblue;
+	stroke-width: 1.5px;
 }
 
 .node {
-  font: 10px sans-serif;
+	font: 10px sans-serif;
 }
 
 .link {
-  fill: none;
-  stroke: #ccc;
-  stroke-width: 1.5px;
+	fill: none;
+	stroke: #ccc;
+	stroke-width: 1.5px;
+}
+
+.header {
+	background: black;
+	height: 80px;
+	margin-bottom: 1%;
+}
+
+.leftbody {
+	background: grey;
+}
+
+.rightbody {
+	background: red;
+	height: 600px;
+}
+
+.footer {
+	background: black;
+	height: 80px;
+	margin-top: 1%;
 }

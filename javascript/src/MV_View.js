@@ -11,19 +11,19 @@ var MV_View = (function() {
 	}
 	
 	function initDia(width, height, padding) {
-		var body = d3.select("body");
+		var body = d3.select(".leftbody");
 		
-		PRIVATE.w = width;//720;//1280;//
+		PRIVATE.w = body[0][0].clientWidth - padding;//720;//1280;//
 		PRIVATE.h = height;//480;//720;//
 		PRIVATE.diaPadding = padding;//50;
 		
 		PUBLIC.svgCartesian = body.append("svg")
-						.attr("width", PRIVATE.w)
+						.attr("width", Math.round(PRIVATE.w * 0.85))
 						.attr("height", PRIVATE.h);
 		
 		PUBLIC.posScaleX = d3.scale.linear()
 					.domain([ d3.max(MV_Model.dataset, function(d,i) { return i; })+10 , 1 ])
-					.range([PRIVATE.diaPadding, PRIVATE.w-PRIVATE.diaPadding]);
+					.range([PRIVATE.diaPadding, Math.round(PRIVATE.w * 0.85) - PRIVATE.diaPadding]);
 		
 		PUBLIC.rankScaleY = d3.scale.linear()
 					.domain([ d3.min(MV_Model.dataset, function(d) { return d.Rank; })-0.1 , d3.max(MV_Model.dataset, function(d) { return d.Rank; }) ])
@@ -44,7 +44,7 @@ var MV_View = (function() {
 		PUBLIC.posFisheyeScaleX = d3.fisheye
 							.scale(d3.scale.linear)
 							.domain([ d3.max(MV_Model.dataset, function(d,i) { return i; })+10 , 1 ])
-							.range([PRIVATE.diaPadding, PRIVATE.w-PRIVATE.diaPadding]);
+							.range([PRIVATE.diaPadding, Math.round(PRIVATE.w * 0.85)-PRIVATE.diaPadding]);
 		
 		PUBLIC.xAxis = d3.svg.axis()
 					.scale(PUBLIC.posScaleX)
@@ -103,7 +103,7 @@ var MV_View = (function() {
 	}
 	
 	function initList() {
-		var body = d3.select("body");
+		var body = d3.select(".leftbody");
 		var countryNames = [];
 		
 		MV_Model.countries.forEach(function(c) {
@@ -123,7 +123,7 @@ var MV_View = (function() {
 					.range([3, 10]);
 					
 		PUBLIC.svgGraph = body.append("svg")
-						.attr("width", PRIVATE.w)
+						.attr("width", Math.round(PRIVATE.w * 0.15))
 						.attr("height", PRIVATE.h);
 	}
 	

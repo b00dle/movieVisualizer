@@ -3,17 +3,47 @@
     <head>
 		<title>MovieVisualizer</title>
 		<meta charset="utf-8">
-		<LINK href="css/diaStyle.css" rel="stylesheet" type="text/css">	
+		
+		<!-- >>>>>STYLESHEETS<<<<< -->
+		<link href="css/diaStyle.css" rel="stylesheet" type="text/css">
+		<link href="javascript/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+		
+		<!-- >>>>>BOOTSTRAP SCRIPTS<<<<< -->
+		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+		<script src="https://code.jquery.com/jquery.js"></script>
+		<script src="javascript/bootsrap/js/bootstrap.min.js"></script>
+		
+		<!-- >>>>>D3 SCRIPTS<<<<< -->
         <script type="text/javascript" src="javascript/d3/d3.js"></script>
 		<script type="text/javascript" src="javascript/d3/fisheye.js"></script>
+		
+		<!-- >>>>>MOVIEW VISUALIZER SCRIPTS<<<<< -->
 		<script type="text/javascript" src="javascript/src/MV_Model.js"></script>
 		<script type="text/javascript" src="javascript/src/MV_View.js"></script>
 		<script type="text/javascript" src="javascript/src/MV_Controller.js"></script>
 		<script type="text/javascript" src="javascript/src/MovieVisualizer.js"></script>
     </head>
 	<body onload="MovieVisualizer.init();">
-		<!--<script type="text/javascript">
-			MovieVisualizer.init();
-		</script>-->
+		
+		<div class="container">
+			<div class="row">
+				<!-- HEADER -->
+				<div class="col-md-12 header">
+				</div>
+				
+				<!-- LEFT BODY -->
+				<div class="col-md-9 leftbody">
+				</div>
+				
+				<!-- RIGHT BODY -->
+				<div class="col-md-3 rightbody">
+				</div>
+				
+				<!-- FOOT BAR -->
+				<div class="col-md-12 footer">
+				</div>
+			</div>
+		</div>
+		
 	</body>
 </html>
