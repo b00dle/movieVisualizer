@@ -2,22 +2,29 @@ var MV_View = (function() {
 	var PUBLIC = {};
 	var PRIVATE = {};
 	
-	PUBLIC.init = function init(width, height, padding) {
-		initDia(width, height, padding);
+	PUBLIC.init = function init(padding) {
+		initDia(padding);
 		drawDia();
 		
 		initList();
 		drawList();
+		
+		initButtons();
+		drawButtons(),
+		
+		initText();
 	}
 	
-	function initDia(width, height, padding) {
-		var body = d3.select(".leftbody");
+	function initDia(padding) {
+		var leftbody = d3.select(".leftbody");
 		
-		PRIVATE.w = body[0][0].clientWidth - padding;//720;//1280;//
-		PRIVATE.h = height;//480;//720;//
+		console.log(window.innerHeight);
+		
+		PRIVATE.w = leftbody[0][0].clientWidth - padding;
+		PRIVATE.h = Math.round(window.innerHeight*0.96);//480;//720;//
 		PRIVATE.diaPadding = padding;//50;
 		
-		PUBLIC.svgCartesian = body.append("svg")
+		PUBLIC.svgCartesian = leftbody.append("svg")
 						.attr("width", Math.round(PRIVATE.w * 0.85))
 						.attr("height", PRIVATE.h);
 		
@@ -103,7 +110,7 @@ var MV_View = (function() {
 	}
 	
 	function initList() {
-		var body = d3.select(".leftbody");
+		var leftbody = d3.select(".leftbody");
 		var countryNames = [];
 		
 		MV_Model.countries.forEach(function(c) {
@@ -122,7 +129,7 @@ var MV_View = (function() {
 					.domain([d3.min(MV_Model.countries,function(d) { return d.Count; }), d3.max(MV_Model.countries,function(d) { return d.Count; })])
 					.range([3, 10]);
 					
-		PUBLIC.svgGraph = body.append("svg")
+		PUBLIC.svgGraph = leftbody.append("svg")
 						.attr("width", Math.round(PRIVATE.w * 0.15))
 						.attr("height", PRIVATE.h);
 	}
@@ -140,10 +147,10 @@ var MV_View = (function() {
 				return PRIVATE.graphCountryScaleY(d.Name);
 			})
 			.attr("r", function(d) {
-				return 4;//return countScaleRadius(d.Count);
+				return 5;//return countScaleRadius(d.Count);
 			})
 			.attr("fill", "rgb(245,245,245)")
-			.attr("stroke", "rgb(0,20,80)")
+			.attr("stroke", "black")
 			.attr("stroke-width", 0.4);
 			
 		PUBLIC.svgGraph.selectAll("text")
@@ -160,6 +167,57 @@ var MV_View = (function() {
 			.text(function(d) {
 				return d.Name;// + " (" + d.Count + " Movies)";
 			});
+	}
+	
+	function initText() {
+		var rightbody = d3.select(".rightbody");
+		rightbody.style("height", PRIVATE.h + "px");
+		
+		PUBLIC.rightbodyText = rightbody.append("div")
+			.style("opacity", 0);
+		
+	}
+	
+	function initButtons() {
+		var tools = d3.select(".shortcuts");
+		
+		PRIVATE.wButtons = tools[0][0].clientWidth;
+		PRIVATE.hButtons = Math.round(PRIVATE.h / 12);
+		
+		PUBLIC.svgShortcuts = tools.append("svg")
+						.attr("width", PRIVATE.wButtons)
+						.attr("height", PRIVATE.hButtons);
+						
+		PRIVATE.buttonList = [{Name:"fisheye (F1)", Active:false}, {Name:"reset (F2)", Active:false}, {Name:"yScale (F4)", Active:false}];		
+	}
+	
+	function drawButtons() {
+		PUBLIC.buttons = PUBLIC.svgShortcuts.selectAll("g")
+				.data(PRIVATE.buttonList)
+				.enter()
+				.append("g")
+				
+		PUBLIC.buttonRects = PUBLIC.buttons.append("rect")
+				.attr("class", "svgButtons")
+				.attr("x", function(d,i) {
+					return Math.round(i*(PRIVATE.wButtons/3 + 5));
+				})
+				.attr("y",0)
+				.attr("width", Math.round(PRIVATE.wButtons/3 - 5))
+				.attr("height", PRIVATE.hButtons-5)
+				.attr("fill", "darkslategrey");
+				
+		PUBLIC.buttonTexts = PUBLIC.buttons.append("text")
+				.attr("class", "svgButtons")
+				.attr("x", function(d,i) {
+					return Math.round(i*(PRIVATE.wButtons/3 + 5)) + Math.round(0.5*(PRIVATE.wButtons/3 - 5));
+				})
+				.attr("y", Math.round(PRIVATE.hButtons)/2)
+				.attr("fill", "white")
+				.style("text-anchor", "middle")
+				.text(function(d) {
+					return d.Name;
+				});
 	}
 	
 	return PUBLIC;

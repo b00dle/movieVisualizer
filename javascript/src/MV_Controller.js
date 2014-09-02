@@ -9,28 +9,99 @@ var MV_Controller = (function () {
 		registerKeyboard();
 		initDiaInteraction();
 		initListInteraction();
+		initButtonInteraction();
 	}
 	
 	function initDiaInteraction() {
-		MV_View.element.on("mouseover", function(d) {
-			var mouse = d3.mouse(this); 
-			var xPos = parseFloat(d3.select(this).attr("cx"));
-			var yPos = parseFloat(d3.select(this).attr("cy")) - 5;
-			
-			//doPie(d);
-			
-			d3.select(this).transition()
-							.duration(500)
-							.attr("fill", "orange");
-		});
-		
-		MV_View.element.on("mouseout", function() {
-			//d3.select("#pie").remove();
-			d3.select(this).transition().duration(500)
-					.attr("fill", function(d) {
-						var factor = MV_View.yearScaleNorm(d.Year);
-						return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
+		MV_View.element.on("click", function(d) {
+			removeHighlight(d.Title);
+			if(!d.Active) {
+				d.Active = true;
+				var mouse = d3.mouse(this); 
+				var xPos = parseFloat(d3.select(this).attr("cx"));
+				var yPos = parseFloat(d3.select(this).attr("cy")) - 5;
+				
+				//doPie(d);
+				
+				var selectedCountries = d.Countries;
+				
+				MV_View.rightbodyText.transition().duration(250)
+					.style("opacity", 0.0)
+					.each("end", function() {
+						d3.select(this).html(function() {
+							var html = "<h2 class='headline'>" + d.Title  + "</h2>";
+							
+							html += "(IMDb rating: " + d.Rank + ", IMDb ranking: " + (MV_Model.ranking[d.Title] + 1) + ", IMDb votes: " + d.Votes + ")";
+							
+							html += "<br><br><div class='bigger'>Production country:</div>";
+							
+							selectedCountries.forEach(function(country, i) {
+								if(i > 0)
+									html += ",";
+								html += " " + country.Country
+								
+							});
+							
+							html += "<br><br><div class='bigger'>Year:</div> " + d.Year;
+							
+							return html;
+						});
+						
+						d3.select("#wikisearch")[0][0].value = d.Title;
+						d3.select("#imdbsearch")[0][0].value = d.Title;
+				
+						d3.select(this).transition().duration(500)
+							.style("opacity", 1.0);
 					});
+				
+				
+							
+				MV_View.countryElement.attr("stroke", function(d) {
+						var isActive = false;
+							selectedCountries.forEach(function(country) {
+								if(d.Name == country.Country)
+									isActive = true;
+							});
+							if(isActive)
+								return "lightgreen";
+							else
+								return "black";
+					})
+					.transition().duration(500)
+					.attr("stroke-width", function(d) {
+						var isActive = false;
+							selectedCountries.forEach(function(country) {
+								if(d.Name == country.Country)
+									isActive = true;
+							});
+							if(isActive)
+								return "3.0";
+							else
+								return "0.2";
+					});
+				
+				d3.select(this).transition()
+								.duration(500)
+								.attr("fill", "lightgreen");
+			}
+			else {
+				d.Active = false;
+				
+				//d3.select("#pie").remove();
+				MV_View.countryElement.transition().duration(500).attr("stroke-width", "0.2")
+					.attr("stroke", "black");
+					
+				d3.select(this).transition().duration(500)
+						.attr("fill", function(d) {
+							var factor = MV_View.yearScaleNorm(d.Year);
+							return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
+						});
+
+				MV_View.rightbodyText.transition().duration(500)
+					.style("opacity", 0);
+					
+				MV_View.rightbodyText.html();
+			}
 		});
 		
 		MV_View.svgCartesian.on("mousemove", function() {
@@ -44,6 +115,23 @@ var MV_Controller = (function () {
 					.call(MV_View.xAxisFisheye);
 			}
 		});
+	}
+	
+	function removeHighlight(butName) {
+		MV_View.element.transition().duration(500)
+			.attr("fill", function(d) {
+				if(d.Title != butName && d.Active) {
+					d.Active = false;
+					var factor = MV_View.yearScaleNorm(d.Year);
+					return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
+				}
+				else {
+					return d3.select(this).attr("fill");
+				}
+			});
+		
+		MV_View.countryElement.transition().duration(500).attr("stroke-width", "0.2")
+					.attr("stroke", "black");
 	}
 	
 	function initListInteraction() {
@@ -80,14 +168,20 @@ var MV_Controller = (function () {
 		body.on("keypress", function() {
 			switch(d3.event.keyCode) {
 				case 112: 	
+					var name = "fisheye (F1)"; 	
 					PRIVATE.updateFisheye = !PRIVATE.updateFisheye;
+					svgButtonPressed(name);
 					break;
 				case 113:
+					var name = "reset (F2)";
 					resetXpos();
+					svgButtonPressed(name);
 					break;
 				case 115:
+					var name = "yScale (F4)";
 					PRIVATE.yAxisAge = !PRIVATE.yAxisAge;
 					setYScale();
+					svgButtonPressed(name);
 					break;
 			}
 		});
@@ -196,6 +290,96 @@ var MV_Controller = (function () {
 			}
 		}
 		return false;
+	}
+	
+	function initButtonInteraction() {
+		MV_View.buttons.on("click", function(d) {
+			d3.select(this).selectAll("rect")
+				.transition().duration(250)
+				.attr("fill", function(d) {
+					if(d.Active) {
+						d.Active = false;
+						return "darkslategrey";
+					}
+					else {
+						d.Active = true;
+						return "darkseagreen";
+					}
+				})
+				.each("end", function(d) {
+					if(d.Name != "fisheye (F1)") {
+						d3.select(this).transition().duration(250)
+							.attr("fill", function(d) {
+								if(d.Active) {
+									d.Active = false;
+									return "darkslategrey";
+								}
+								else {
+									d.Active = true;
+									return "darkseagreen";
+								}
+							});
+					}
+				});
+			
+			switch(d.Name) {
+				case "fisheye (F1)": 	
+					PRIVATE.updateFisheye = !PRIVATE.updateFisheye;
+					break;
+				case "reset (F2)":
+					resetXpos();
+					break;
+				case "yScale (F4)":
+					PRIVATE.yAxisAge = !PRIVATE.yAxisAge;
+					setYScale();
+					break;
+			}
+			
+		});
+		
+		MV_View.buttons.on("mouseover", function() {
+			d3.select(this).transition().duration(200)
+				.attr("fill", "#446161");
+		});
+		
+		MV_View.buttons.on("mouseout", function() {
+			d3.select(this).transition().duration(200).attr("fill", "darkslategrey");
+		});
+	}
+	
+	function svgButtonPressed(name) {
+		MV_View.buttons.each(function(d) {
+			if(d.Name == name) {
+				d3.select(this).selectAll("rect")
+					.transition()
+					.duration(250)
+					.attr("fill", function(d) {
+						if(d.Active) {
+							d.Active = false;
+							return "darkslategrey";
+						}
+						else {
+							d.Active = true;
+							return "darkseagreen";
+						}
+					})
+					.each("end", function(d) {
+						if(d.Name != "fisheye (F1)") {
+							d3.select(this).transition().duration(250)
+								.attr("fill", function(d) {
+									if(d.Active) {
+										d.Active = false;
+										return "darkslategrey";
+									}
+									else {
+										d.Active = true;
+										return "darkseagreen";
+									}
+								});
+						}
+					});
+			}
+		});
 	}
 	
 	return PUBLIC;	

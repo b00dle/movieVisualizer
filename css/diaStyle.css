@@ -27,22 +27,56 @@
 }
 
 .header {
-	background: black;
-	height: 80px;
+	background: darkgrey;
+	height: 20px;
 	margin-bottom: 1%;
 }
 
 .leftbody {
-	background: grey;
+	background: oldlace;
 }
 
 .rightbody {
-	background: red;
-	height: 600px;
+	padding: 1%;
+	background: lightgrey;
+	font-family: sans-serif;
+	font-size: 11px;
+}
+
+.tools {
+	width: 100%;
+	padding: 3% 2%;
+	background: #B2D1D1;
 }
 
 .footer {
-	background: black;
-	height: 80px;
+	background: darkgrey;
+	height: 20px;
 	margin-top: 1%;
+}
+
+.bigger {
+	font-size: 14px;
+	display: inline;
+}
+
+.headline {
+	color: darkslategrey;
+}
+
+.nopadding {
+   padding: 1% !important;
+   margin: 0 !important;
+   width: 100% !important;
+   height: 80% !important;
+}
+
+input[type=submit] {
+   padding: 1px 7px; 
+   background:darkslategrey;
+   color: white;
+   border: 1px;
+   cursor: pointer;
+   -webkit-border-radius: 1px;
+   border-radius: 1px;
 }

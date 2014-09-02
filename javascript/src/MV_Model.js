@@ -29,6 +29,7 @@ var MV_Model = (function() {
 			PUBLIC.movies.push(d.Title);
 			var s = d.Country.toString();
 			d["Countries"] = [];
+			d["Active"] = false;
 			s.split("-").forEach(function(c) {
 				d["Countries"].push({Country:c, Count:1});
 				if(!hasOwnProperty(PUBLIC.countryColors, c)) {
