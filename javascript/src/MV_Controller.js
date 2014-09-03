@@ -24,6 +24,7 @@ var MV_Controller = (function () {
 				//doPie(d);
 				
 				var selectedCountries = d.Countries;
+				var selectedGenres = d.Genres;
 				
 				MV_View.rightbodyText.transition().duration(250)
 					.style("opacity", 0.0)
@@ -43,6 +44,15 @@ var MV_Controller = (function () {
 							});
 							
 							html += "<br><br><div class='bigger'>Year:</div> " + d.Year;
+							
+							html += "<br><br><div class='bigger'>Genre:</div>";
+							
+							selectedGenres.forEach(function(genre, i) {
+								if(i > 0)
+									html += ",";
+								html += " " + genre.Genre
+								
+							});
 							
 							return html;
 						});

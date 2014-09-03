@@ -9,6 +9,9 @@ var MV_View = (function() {
 		initList();
 		drawList();
 		
+		initPie();
+		drawPie();
+		
 		initButtons();
 		drawButtons(),
 		
@@ -17,8 +20,6 @@ var MV_View = (function() {
 	
 	function initDia(padding) {
 		var leftbody = d3.select(".leftbody");
-		
-		console.log(window.innerHeight);
 		
 		PRIVATE.w = leftbody[0][0].clientWidth - padding;
 		PRIVATE.h = Math.round(window.innerHeight*0.96);//480;//720;//
@@ -167,6 +168,45 @@ var MV_View = (function() {
 			.text(function(d) {
 				return d.Name;// + " (" + d.Count + " Movies)";
 			});
+	}
+	
+	function initPie() {
+		var genreChart = d3.select(".genreChart");
+		
+		PRIVATE.pieLayout = d3.layout.pie()
+			.value(function(d) {
+				return d.Count;
+			});
+		
+		PRIVATE.wPie = Math.round(genreChart[0][0].clientWidth * 0.9);
+		PRIVATE.hPie = PRIVATE.wPie;
+		
+		PRIVATE.pieOuterRadius = PRIVATE.wPie / 2;
+		PRIVATE.pieInnerRadius = 0;
+		PRIVATE.pieArc = d3.svg.arc()
+						.innerRadius(PRIVATE.pieInnerRadius)
+						.outerRadius(PRIVATE.pieOuterRadius);
+						
+		PUBLIC.svgGenres = genreChart.append("svg")
+									.attr("width", PRIVATE.wPie)
+									.attr("height", PRIVATE.hPie);		
+	}
+	
+	function drawPie() {
+		PUBLIC.pieArcs = PUBLIC.svgGenres.selectAll("g.arc")
+			.data(PRIVATE.pieLayout(MV_Model.genres))
+			.enter()
+			.append("g")
+			.attr("class", "arc")
+			.attr("transform", "translate(" + PRIVATE.pieOuterRadius + ", " + PRIVATE.pieOuterRadius + ")");
+
+		var color = d3.scale.category20();
+		
+		PUBLIC.pieArcs.append("path")
+			.attr("fill", function(d, i) {
+				return color(i);
+			})
+			.attr("d", PRIVATE.pieArc);
 	}
 	
 	function initText() {
