@@ -73,7 +73,7 @@ var MV_Controller = (function () {
 									isActive = true;
 							});
 							if(isActive)
-								return "lightgreen";
+								return "limegreen"
 							else
 								return "black";
 					})
@@ -89,16 +89,43 @@ var MV_Controller = (function () {
 							else
 								return "0.2";
 					});
+					
+				MV_View.genreBars.attr("stroke", function(d) {
+						var isActive = false;
+							selectedGenres.forEach(function(genre) {
+								if(d.Name == genre.Genre)
+									isActive = true;
+							});
+							if(isActive)
+								return "limegreen"
+							else
+								return "black";
+					})
+					.transition().duration(500)
+					.attr("stroke-width", function(d) {
+						var isActive = false;
+							selectedGenres.forEach(function(genre) {
+								if(d.Name == genre.Genre)
+									isActive = true;
+							});
+							if(isActive)
+								return "3.0";
+							else
+								return "0.0";
+					});
 				
 				d3.select(this).transition()
 								.duration(500)
-								.attr("fill", "lightgreen");
+								.attr("fill","limegreen")
 			}
 			else {
 				d.Active = false;
 				
 				//d3.select("#pie").remove();
 				MV_View.countryElement.transition().duration(500).attr("stroke-width", "0.2")
+					.attr("stroke", "black");
+					
+				MV_View.genreBars.transition().duration(500).attr("stroke-width", "0.0")
 					.attr("stroke", "black");
 					
 				d3.select(this).transition().duration(500)

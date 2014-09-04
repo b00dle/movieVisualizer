@@ -44,6 +44,7 @@
 }
 
 .tools {
+	margin-top: 4%;
 	width: 100%;
 	padding: 3% 2%;
 	background: #B2D1D1;
@@ -51,8 +52,8 @@
 
 .genreChart {
 	width: 100%;
-	padding-left: 6%;
-	padding-bottom: 3%
+	padding-top: 3%;
+	background: oldlace;
 }
 
 .footer {

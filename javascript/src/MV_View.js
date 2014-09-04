@@ -9,8 +9,11 @@ var MV_View = (function() {
 		initList();
 		drawList();
 		
-		initPie();
-		drawPie();
+		//initPie();
+		//drawPie();
+		
+		initBar();
+		drawBar();
 		
 		initButtons();
 		drawButtons(),
@@ -158,7 +161,7 @@ var MV_View = (function() {
 			.data(MV_Model.countries)
 			.enter()
 			.append("text")
-			.attr("x",  PRIVATE.diaPadding)
+			.attr("x", PRIVATE.diaPadding)
 			.attr("y", function(d) {
 				return PRIVATE.graphCountryScaleY(d.Name);
 			})
@@ -187,13 +190,13 @@ var MV_View = (function() {
 						.innerRadius(PRIVATE.pieInnerRadius)
 						.outerRadius(PRIVATE.pieOuterRadius);
 						
-		PUBLIC.svgGenres = genreChart.append("svg")
+		PUBLIC.svgGenresPie = genreChart.append("svg")
 									.attr("width", PRIVATE.wPie)
 									.attr("height", PRIVATE.hPie);		
 	}
 	
 	function drawPie() {
-		PUBLIC.pieArcs = PUBLIC.svgGenres.selectAll("g.arc")
+		PUBLIC.pieArcs = PUBLIC.svgGenresPie.selectAll("g.arc")
 			.data(PRIVATE.pieLayout(MV_Model.genres))
 			.enter()
 			.append("g")
@@ -207,6 +210,70 @@ var MV_View = (function() {
 				return color(i);
 			})
 			.attr("d", PRIVATE.pieArc);
+	}
+	
+	function initBar() {
+		var genreChart = d3.select(".genreChart");
+		
+		PRIVATE.wBar = Math.round(genreChart[0][0].clientWidth);
+		PRIVATE.hBar = Math.round(PRIVATE.wBar*9/16);
+		
+		PUBLIC.svgGenresBar = genreChart.append("svg")
+			.attr("width", PRIVATE.wBar)
+			.attr("height", PRIVATE.hBar+50);
+		
+		PRIVATE.xScaleBar = d3.scale.ordinal()
+			.domain(d3.range(MV_Model.genres.length))
+			.rangeRoundBands([0, PRIVATE.wBar-40], 0.15);
+		
+		PRIVATE.yScaleBar = d3.scale.linear()
+			.domain([d3.min(MV_Model.genres,function(d) { return d.Count; }), d3.max(MV_Model.genres,function(d) { return d.Count; })])
+			.range([7,PRIVATE.hBar]);
+		
+		PRIVATE.normScaleFactor = d3.scale.log()
+			.domain([d3.min(MV_Model.genres,function(d) { return d.Count; }), d3.max(MV_Model.genres,function(d) { return d.Count; })])
+			.range([0,1]);
+	}
+	
+	function drawBar() {
+		PUBLIC.genreBars = PUBLIC.svgGenresBar.append("g")
+			.selectAll("rect")
+			.data(MV_Model.genres)
+			.enter()
+			.append("rect")
+			.attr("x", function(d, i) {
+				return PRIVATE.xScaleBar(i);
+			})
+			.attr("y", function(d) {
+				return PRIVATE.hBar - PRIVATE.yScaleBar(d.Count);
+			})
+			.attr("width", PRIVATE.xScaleBar.rangeBand())
+			.attr("height", function(d) {
+				return PRIVATE.yScaleBar(d.Count);
+			})
+			.attr("fill", function(d) {		
+				return "rgb(" + Math.round(50 + 120 * (1-PRIVATE.normScaleFactor(d.Count))) + ",75," + Math.round(90 + 130 * PRIVATE.normScaleFactor(d.Count)) + ")"; 
+			});
+			
+		PUBLIC.svgGenresBar.selectAll("text")
+			.data(MV_Model.genres)
+			.enter()
+			.append("text")
+			.attr("x", 0)/*function(d, i) {
+				return PRIVATE.xScaleBar(i);
+			})*/
+			.attr("y", 0)//PRIVATE.hBar-10)
+			.attr("transform", function(d, i) {
+				var x = PRIVATE.xScaleBar(i);
+				var y = PRIVATE.hBar+5;
+				return "translate(" + x + "," + y + ") rotate(40)";
+			})
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "11px")
+			.style("text-anchor", "right")
+			.text(function(d) {
+				return d.Name;
+			});
 	}
 	
 	function initText() {
