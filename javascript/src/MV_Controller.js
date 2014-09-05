@@ -25,7 +25,23 @@ var MV_Controller = (function () {
 				
 				var selectedCountries = d.Countries;
 				var selectedGenres = d.Genres;
+				var selectedRank = MV_Model.ranking[d.Title];
+				var selectedTitle = d.Title;
 				
+				MV_View.elementAxisLabelXText
+					.transition().duration(250)
+					.attr("opacity", "0")
+					.each("end", function() {
+						d3.select(this).attr("transform" , function() {
+							var x = MV_View.posScaleX(MV_Model.ranking[selectedTitle]);
+							var y = MV_View.h - 0.7 * MV_View.diaPadding + 1.2;
+							return "translate(" + x + "," + y +")";
+						})
+						.text(selectedRank + "")
+						.transition().duration(250)
+						.attr("opacity", "1");
+					});					
+					
 				MV_View.rightbodyText.transition().duration(250)
 					.style("opacity", 0.0)
 					.each("end", function() {
@@ -169,6 +185,9 @@ var MV_Controller = (function () {
 		
 		MV_View.countryElement.transition().duration(500).attr("stroke-width", "0.2")
 					.attr("stroke", "black");
+		
+		MV_View.elementAxisLabelXText.transition().duration(500)
+			.attr("opacity", "0");
 	}
 	
 	function initListInteraction() {
@@ -250,7 +269,16 @@ var MV_Controller = (function () {
 			MV_View.svgCartesian.select(".y.axis")
 				.transition()
 				.duration(500)
-				.call(MV_View.yAxis);								
+				.call(MV_View.yAxis)
+				.selectAll("text").attr("transform", "translate(-15,0)");
+			
+			MV_View.yLabel.transition().duration(250)
+				.attr("opacity", "0")
+				.each("end", function() {
+					MV_View.yLabel.text("Production Year")
+						.transition().duration(250)
+						.attr("opacity","1");
+				});
 		}
 		else {
 			MV_View.element.transition()
@@ -264,7 +292,16 @@ var MV_Controller = (function () {
 			MV_View.svgCartesian.select(".y.axis")
 				.transition()
 				.duration(500)
-				.call(MV_View.yAxis);
+				.call(MV_View.yAxis)
+				.selectAll("text").attr("transform", "translate(-15,0)");
+				
+			MV_View.yLabel.transition().duration(250)
+				.attr("opacity", "0")
+				.each("end", function() {
+					MV_View.yLabel.text("IMDb Rating")
+						.transition().duration(250)
+						.attr("opacity","1");
+				});
 		}
 	}
 	

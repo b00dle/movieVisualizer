@@ -24,25 +24,27 @@ var MV_View = (function() {
 	function initDia(padding) {
 		var leftbody = d3.select(".leftbody");
 		
-		PRIVATE.w = leftbody[0][0].clientWidth - padding;
-		PRIVATE.h = Math.round(window.innerHeight*0.96);//480;//720;//
-		PRIVATE.diaPadding = padding;//50;
+		PUBLIC.w = leftbody[0][0].clientWidth - padding;
+		PUBLIC.h = Math.round(window.innerHeight*0.96);//480;//720;//
+		PUBLIC.diaPadding = padding;//50;
 		
 		PUBLIC.svgCartesian = leftbody.append("svg")
-						.attr("width", Math.round(PRIVATE.w * 0.85))
-						.attr("height", PRIVATE.h);
+						.attr("width", Math.round(PUBLIC.w * 0.86))
+						.attr("height", PUBLIC.h);
 		
 		PUBLIC.posScaleX = d3.scale.linear()
-					.domain([ d3.max(MV_Model.dataset, function(d,i) { return i; })+10 , 1 ])
-					.range([PRIVATE.diaPadding, Math.round(PRIVATE.w * 0.85) - PRIVATE.diaPadding]);
+					.domain([ d3.max(MV_Model.dataset, function(d,i) { return i; })+10 , -10 ])
+					.range([Math.round(PUBLIC.w * 0.85), PUBLIC.diaPadding]);
 		
 		PUBLIC.rankScaleY = d3.scale.linear()
-					.domain([ d3.min(MV_Model.dataset, function(d) { return d.Rank; })-0.1 , d3.max(MV_Model.dataset, function(d) { return d.Rank; }) ])
-					.range([PRIVATE.h-PRIVATE.diaPadding,PRIVATE.diaPadding]);
+					.domain([7.8 , 9.4])
+					//.domain([ d3.min(MV_Model.dataset, function(d) { return d.Rank; })-0.1 , d3.max(MV_Model.dataset, function(d) { return d.Rank; }) ])
+					.range([PUBLIC.h-PUBLIC.diaPadding,0.5*PUBLIC.diaPadding]);
 					
 		PUBLIC.yearScaleY = d3.scale.linear()
-					.domain([ d3.min(MV_Model.dataset,function(d) { return d.Year; })-5 , d3.max(MV_Model.dataset,function(d) { return d.Year; }) ])
-					.range([PRIVATE.h-PRIVATE.diaPadding,PRIVATE.diaPadding]);
+					//.domain([ d3.min(MV_Model.dataset,function(d) { return d.Year; })-5 , d3.max(MV_Model.dataset,function(d) { return d.Year; }) ])
+					.domain([1920 , 2020])
+					.range([PUBLIC.h-PUBLIC.diaPadding,0.5*PUBLIC.diaPadding]);
 					
 		PUBLIC.yearScaleNorm = d3.scale.linear()
 					.domain([ d3.min(MV_Model.dataset,function(d) { return d.Year; }) , d3.max(MV_Model.dataset,function(d) { return d.Year; }) ])
@@ -54,25 +56,72 @@ var MV_View = (function() {
 					
 		PUBLIC.posFisheyeScaleX = d3.fisheye
 							.scale(d3.scale.linear)
-							.domain([ d3.max(MV_Model.dataset, function(d,i) { return i; })+10 , 1 ])
-							.range([PRIVATE.diaPadding, Math.round(PRIVATE.w * 0.85)-PRIVATE.diaPadding]);
+							.domain([ d3.max(MV_Model.dataset, function(d,i) { return i; })+10 , -10 ])
+							.range([Math.round(PUBLIC.w * 0.85),PUBLIC.diaPadding]);
 		
 		PUBLIC.xAxis = d3.svg.axis()
 					.scale(PUBLIC.posScaleX)
-					.orient("bottom");
+					.orient("bottom")
+					.tickSize(-(PUBLIC.h-1.5*PUBLIC.diaPadding));
 		
 		PUBLIC.yAxis = d3.svg.axis()
-					.scale(PUBLIC.rankScaleY)//.scale(yearScaleY)
-					.orient("left");
+					.scale(PUBLIC.rankScaleY)
+					.orient("left")
+					.tickSize(-(Math.round(PUBLIC.w * 0.85) - PUBLIC.diaPadding));
 					
 		PUBLIC.xAxisFisheye = d3.svg.axis()
 						.scale(PUBLIC.posFisheyeScaleX)
-						.orient("bottom");
-						//.tickFormat(d3.format(",d"))
-						//.tickSize(-h);
+						.orient("bottom")
+						.tickSize(-(PUBLIC.h-1.5*PUBLIC.diaPadding));
 	}
 	
 	function drawDia() {
+		
+		PUBLIC.svgCartesian.append("rect")
+			.attr("class","background")
+			.attr("width", Math.round(PUBLIC.w * 0.85) - PUBLIC.diaPadding)
+			.attr("height", PUBLIC.h-1.5*PUBLIC.diaPadding)
+			.attr("transform", "translate(" + PUBLIC.diaPadding + "," + 0.5*PUBLIC.diaPadding +")");
+		
+		PRIVATE.xAxisG = PUBLIC.svgCartesian.append("g")
+			.attr("class", "x axis")
+			.attr("transform", "translate(0," + (PUBLIC.h-PUBLIC.diaPadding) + ")")
+			.call(PUBLIC.xAxis)
+			.selectAll("text").attr("transform", "translate(0,15)");
+		
+		PRIVATE.yAxisG = PUBLIC.svgCartesian.append("g")
+			.attr("class","y axis")
+			.attr("transform", "translate(" + PUBLIC.diaPadding + ",0)")
+			.call(PUBLIC.yAxis)
+			.selectAll("text").attr("transform", "translate(-15,0)");
+		
+		PUBLIC.svgCartesian.append("text")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("transform", function() {
+				var x = Math.round(PUBLIC.w * 0.85) - PUBLIC.diaPadding - 25;
+				var y = PUBLIC.h - PUBLIC.diaPadding + 11 ;
+				return "translate(" + x + "," + y + ")";
+			})
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "10px")
+			.style("text-anchor", "middle")
+			.text("IMDb Top 250 Movies Ranking");
+		
+		PUBLIC.yLabel = PUBLIC.svgCartesian.append("text")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("transform", function() {
+				var x = PUBLIC.diaPadding - 4;
+				var y = PUBLIC.diaPadding + 15;
+				return "translate(" + x + "," + y + ") rotate(-90)";
+			})
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "10px")
+			.attr("opacity", "1")
+			.style("text-anchor", "middle")
+			.text("IMDb Rating");
+		
 		PUBLIC.element = PUBLIC.svgCartesian.append("g")
 				.attr("class", "elements")
 				.selectAll("circle")
@@ -84,15 +133,19 @@ var MV_View = (function() {
 					return PRIVATE.voteScaleRadius(b.Votes) - PRIVATE.voteScaleRadius(a.Votes);
 				});
 		
-		PUBLIC.svgCartesian.append("g")
-				.attr("class", "x axis")
-				.attr("transform", "translate(0," + (PRIVATE.h-PRIVATE.diaPadding) + ")")
-				.call(PUBLIC.xAxis);
+		PUBLIC.elementAxisLabelX = PUBLIC.svgCartesian.append("g")
+			.attr("class", "highlighted");
 		
-		PUBLIC.svgCartesian.append("g")
-				.attr("class","y axis")
-				.attr("transform", "translate(" + PRIVATE.diaPadding + ",0)")
-				.call(PUBLIC.yAxis);
+		PUBLIC.elementAxisLabelXText = PUBLIC.elementAxisLabelX.append("text")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "10px")
+			.attr("fill", "limegreen")
+			.attr("stroke-size", "0.1")
+			.attr("font-weight", "bold")
+			.attr("opacity", "0")
+			.style("text-anchor", "middle");
 	}
 	
 	function computeAttributes(element) {
@@ -123,19 +176,19 @@ var MV_View = (function() {
 		
 		PRIVATE.graphCountryScaleY = d3.scale.ordinal()
 				.domain(countryNames)
-				.rangeRoundBands([20, PRIVATE.h-20], 0.02);
+				.rangeRoundBands([20, PUBLIC.h-20], 0.02);
 				
 		PRIVATE.graphMovieScaleY = d3.scale.ordinal()
 					.domain(MV_Model.movies)
-					.rangeRoundBands([20, PRIVATE.h-20], 0.02);
+					.rangeRoundBands([20, PUBLIC.h-20], 0.02);
 		
 		PRIVATE.countScaleRadius = d3.scale.linear()
 					.domain([d3.min(MV_Model.countries,function(d) { return d.Count; }), d3.max(MV_Model.countries,function(d) { return d.Count; })])
 					.range([3, 10]);
 					
 		PUBLIC.svgGraph = leftbody.append("svg")
-						.attr("width", Math.round(PRIVATE.w * 0.15))
-						.attr("height", PRIVATE.h);
+						.attr("width", Math.round(PUBLIC.w * 0.14))
+						.attr("height", PUBLIC.h);
 	}
 	
 	function drawList() {
@@ -146,7 +199,7 @@ var MV_View = (function() {
 										.enter()
 										.append("circle");
 		
-		PUBLIC.countryElement.attr("cx", PRIVATE.diaPadding)
+		PUBLIC.countryElement.attr("cx", 0.5*PUBLIC.diaPadding)
 			.attr("cy", function(d) {
 				return PRIVATE.graphCountryScaleY(d.Name);
 			})
@@ -161,11 +214,11 @@ var MV_View = (function() {
 			.data(MV_Model.countries)
 			.enter()
 			.append("text")
-			.attr("x", PRIVATE.diaPadding)
+			.attr("x", 0.5*PUBLIC.diaPadding)
 			.attr("y", function(d) {
 				return PRIVATE.graphCountryScaleY(d.Name);
 			})
-			.attr("transform", "translate(8,4)")
+			.attr("transform", "translate(10,4)")
 			.attr("font-family", "sans-serif")
 			.attr("font-size", "11px")
 			.text(function(d) {
@@ -227,12 +280,16 @@ var MV_View = (function() {
 			.rangeRoundBands([0, PRIVATE.wBar-40], 0.15);
 		
 		PRIVATE.yScaleBar = d3.scale.linear()
-			.domain([d3.min(MV_Model.genres,function(d) { return d.Count; }), d3.max(MV_Model.genres,function(d) { return d.Count; })])
-			.range([7,PRIVATE.hBar]);
+			.domain([d3.min(MV_Model.genres,function(d) { return d.Count; })-1, d3.max(MV_Model.genres,function(d) { return d.Count; })])
+			.range([PRIVATE.hBar,5]);
 		
 		PRIVATE.normScaleFactor = d3.scale.log()
 			.domain([d3.min(MV_Model.genres,function(d) { return d.Count; }), d3.max(MV_Model.genres,function(d) { return d.Count; })])
 			.range([0,1]);
+			
+		PUBLIC.yAxisBar = d3.svg.axis()
+			.scale(PRIVATE.yScaleBar)
+			.orient("right");
 	}
 	
 	function drawBar() {
@@ -245,11 +302,11 @@ var MV_View = (function() {
 				return PRIVATE.xScaleBar(i);
 			})
 			.attr("y", function(d) {
-				return PRIVATE.hBar - PRIVATE.yScaleBar(d.Count);
+				return PRIVATE.yScaleBar(d.Count);
 			})
 			.attr("width", PRIVATE.xScaleBar.rangeBand())
 			.attr("height", function(d) {
-				return PRIVATE.yScaleBar(d.Count);
+				return PRIVATE.hBar - PRIVATE.yScaleBar(d.Count);
 			})
 			.attr("fill", function(d) {		
 				return "rgb(" + Math.round(50 + 120 * (1-PRIVATE.normScaleFactor(d.Count))) + ",75," + Math.round(90 + 130 * PRIVATE.normScaleFactor(d.Count)) + ")"; 
@@ -259,10 +316,8 @@ var MV_View = (function() {
 			.data(MV_Model.genres)
 			.enter()
 			.append("text")
-			.attr("x", 0)/*function(d, i) {
-				return PRIVATE.xScaleBar(i);
-			})*/
-			.attr("y", 0)//PRIVATE.hBar-10)
+			.attr("x", 0)
+			.attr("y", 0)
 			.attr("transform", function(d, i) {
 				var x = PRIVATE.xScaleBar(i);
 				var y = PRIVATE.hBar+5;
@@ -274,11 +329,29 @@ var MV_View = (function() {
 			.text(function(d) {
 				return d.Name;
 			});
+			
+		PRIVATE.yAxisBarG = PUBLIC.svgGenresBar.append("g")
+			.attr("class", "blackaxis")
+			.attr("transform", "translate(" + (PRIVATE.wBar-50) + ",0)")
+			.call(PUBLIC.yAxisBar);
+			
+		PRIVATE.yAxisBarG.append("text")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("transform", function() {
+				var x = 40;
+				var y = Math.round(PRIVATE.hBar / 2);
+				return "translate(" + x + "," + y + ") rotate(-90)";
+			})
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "11px")
+			.style("text-anchor", "middle")
+			.text("count in top 250 movies");
 	}
 	
 	function initText() {
 		var rightbody = d3.select(".rightbody");
-		rightbody.style("height", PRIVATE.h + "px");
+		rightbody.style("height", PUBLIC.h + "px");
 		
 		PUBLIC.rightbodyText = rightbody.append("div")
 			.style("opacity", 0);
@@ -289,7 +362,7 @@ var MV_View = (function() {
 		var tools = d3.select(".shortcuts");
 		
 		PRIVATE.wButtons = tools[0][0].clientWidth;
-		PRIVATE.hButtons = Math.round(PRIVATE.h / 12);
+		PRIVATE.hButtons = Math.round(PUBLIC.h / 12);
 		
 		PUBLIC.svgShortcuts = tools.append("svg")
 						.attr("width", PRIVATE.wButtons)

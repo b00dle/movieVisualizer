@@ -1,11 +1,32 @@
 .axis path,
-.axis line {
+.axis line ,
+.blackaxis path,
+.blackaxis line {
 	fill: none;
-	stroke: black;
 	shape-rendering: crispEdges;
 }
 
+.axis path,
+.axis line {
+	stroke: white;
+}
+
+.blackaxis path,
+.blackaxis line {
+	stroke: black;
+}
+
+.background {
+	fill: lightgrey;
+	stroke: white;
+}
+
 .axis text {
+	font-family: sans-serif;
+	font-size: 12px;
+}
+
+.blackaxis text {
 	font-family: sans-serif;
 	font-size: 11px;
 }
