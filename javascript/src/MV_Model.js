@@ -4,6 +4,7 @@ var MV_Model = (function() {
 			countries: 			[],
 			genres:				[],
 			activeCountries: 	[],
+			activeGenres:		[],
 			movies:	 			[],
 			countryColors:		{},
 			ranking:			{}
@@ -65,6 +66,8 @@ var MV_Model = (function() {
 					tempGenres[g].Count += 1;
 				}
 			});
+			
+			d["Transparent"] = false;
 			
 			PUBLIC.ranking[d.Title] = i+1;
 		});

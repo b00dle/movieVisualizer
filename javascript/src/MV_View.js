@@ -1,5 +1,9 @@
 var MV_View = (function() {
-	var PUBLIC = {};
+	var PUBLIC = {
+		normScaleFactor: d3.scale.log(),
+		voteScaleRadius: d3.scale.linear()
+	};
+	
 	var PRIVATE = {};
 	
 	PUBLIC.init = function init(padding) {
@@ -50,7 +54,7 @@ var MV_View = (function() {
 					.domain([ d3.min(MV_Model.dataset,function(d) { return d.Year; }) , d3.max(MV_Model.dataset,function(d) { return d.Year; }) ])
 					.range([0,1]);
 		
-		PRIVATE.voteScaleRadius = d3.scale.linear()
+		PUBLIC.voteScaleRadius = d3.scale.linear()
 					.domain([ d3.min(MV_Model.dataset,function(d) { return d.Votes; }) , d3.max(MV_Model.dataset,function(d) { return d.Votes; }) ])
 					.range([5,20]);
 					
@@ -130,7 +134,13 @@ var MV_View = (function() {
 				.append("circle")
 				.call(computeAttributes)
 				.sort(function(a, b) { 
-					return PRIVATE.voteScaleRadius(b.Votes) - PRIVATE.voteScaleRadius(a.Votes);
+					if(a.Transparent != b.Transparent) {
+						if(a.Transparent)
+							return -1;
+						else
+							return 1;
+					}
+					return PUBLIC.voteScaleRadius(b.Votes) - PUBLIC.voteScaleRadius(a.Votes);
 				});
 		
 		PUBLIC.elementAxisLabelX = PUBLIC.svgCartesian.append("g")
@@ -186,14 +196,15 @@ var MV_View = (function() {
 					return PUBLIC.rankScaleY(d.Rank);//yearScaleY(d.Year);//
 				})
 				.attr("r", function(d) {
-					return PRIVATE.voteScaleRadius(d.Votes);
+					return PUBLIC.voteScaleRadius(d.Votes);
 				})
 				.attr("fill", function(d) {
 					var factor = PUBLIC.yearScaleNorm(d.Year);
 					return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
 				})
 				.attr("stroke", "white")
-				.attr("stroke-width", 0.2);				
+				.attr("stroke-width", 0.2)
+				.attr("opacity", "1.0");				
 	}
 	
 	function initList() {
@@ -270,12 +281,12 @@ var MV_View = (function() {
 		PRIVATE.pieOuterRadius = PRIVATE.wPie / 2;
 		PRIVATE.pieInnerRadius = 0;
 		PRIVATE.pieArc = d3.svg.arc()
-						.innerRadius(PRIVATE.pieInnerRadius)
-						.outerRadius(PRIVATE.pieOuterRadius);
+			.innerRadius(PRIVATE.pieInnerRadius)
+			.outerRadius(PRIVATE.pieOuterRadius);
 						
 		PUBLIC.svgGenresPie = genreChart.append("svg")
-									.attr("width", PRIVATE.wPie)
-									.attr("height", PRIVATE.hPie);		
+			.attr("width", PRIVATE.wPie)
+			.attr("height", PRIVATE.hPie);		
 	}
 	
 	function drawPie() {
@@ -313,7 +324,7 @@ var MV_View = (function() {
 			.domain([d3.min(MV_Model.genres,function(d) { return d.Count; })-1, d3.max(MV_Model.genres,function(d) { return d.Count; })])
 			.range([PRIVATE.hBar,5]);
 		
-		PRIVATE.normScaleFactor = d3.scale.log()
+		PUBLIC.normScaleFactor = d3.scale.log()
 			.domain([d3.min(MV_Model.genres,function(d) { return d.Count; }), d3.max(MV_Model.genres,function(d) { return d.Count; })])
 			.range([0,1]);
 			
@@ -339,7 +350,7 @@ var MV_View = (function() {
 				return PRIVATE.hBar - PRIVATE.yScaleBar(d.Count);
 			})
 			.attr("fill", function(d) {		
-				return "rgb(" + Math.round(50 + 120 * (1-PRIVATE.normScaleFactor(d.Count))) + ",75," + Math.round(90 + 130 * PRIVATE.normScaleFactor(d.Count)) + ")"; 
+				return "rgb(" + Math.round(50 + 120 * (1-PUBLIC.normScaleFactor(d.Count))) + ",75," + Math.round(90 + 130 * PUBLIC.normScaleFactor(d.Count)) + ")"; 
 			});
 			
 		PUBLIC.svgGenresBar.selectAll("text")

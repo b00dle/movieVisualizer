@@ -10,6 +10,7 @@ var MV_Controller = (function () {
 		initDiaInteraction();
 		initListInteraction();
 		initButtonInteraction();
+		initBarInteraction();
 	}
 	
 	function initDiaInteraction() {
@@ -280,6 +281,7 @@ var MV_Controller = (function () {
 			}
 			
 			flipElementStrokeStyle(d.Name, d.Active);
+			solveOpacity();
 		});			
 	}
 	
@@ -518,6 +520,7 @@ var MV_Controller = (function () {
 			.duration(200)
 			.attr("stroke-width",function(da) {
 				var fromCountry = false;
+				var hasGenre = false;
 				var stillActive = false;
 				da.Countries.forEach(function(c) {
 					if(c["Country"] === name)
@@ -526,28 +529,52 @@ var MV_Controller = (function () {
 						stillActive = true;
 					}
 				});
-				if(fromCountry || stillActive) {
-					if(isActive || stillActive)
+				da.Genres.forEach(function(g) {
+					if(g["Genre"] === name)
+						hasGenre = true;
+					else if(arrayContains(MV_Model.activeGenres, g["Genre"])){
+						stillActive = true;
+					}
+				});
+				if(fromCountry || hasGenre || stillActive) {
+					if(isActive || stillActive) {
+						da.Transparent = false;
 						return 3.0;
-					else
+					}
+					else {
+						da.Transparent = true;
 						return 0.2;
+					}
 				}
-				else
-					return d3.select(this).attr("stroke-width");
+				else {
+					var strokeWidth = d3.select(this).attr("stroke-width");
+					if(parseFloat(strokeWidth) < 2.9)
+						da.Transparent = true;
+					else
+						da.Transparent = false;
+					return strokeWidth;
+				}
 			})
 			.transition()
 			.duration(200)
 			.attr("stroke",function(da) {
 				var fromCountry = false;
+				var hasGenre = false;
 				var stillActive = false;
 				da.Countries.forEach(function(c) {
 					if(c["Country"] === name)
 						fromCountry = true;
-					else if(arrayContains(MV_Model.activeCountries, c["Country"])){
+					else if(arrayContains(MV_Model.activeCountries, c["Country"]))
+						stillActive = true;
+				});
+				da.Genres.forEach(function(g) {
+					if(g["Genre"] === name)
+						hasGenre = true;
+					else if(arrayContains(MV_Model.activeGenres, g["Genre"])){
 						stillActive = true;
 					}
 				});
-				if(fromCountry || stillActive) {
+				if(fromCountry || hasGenre || stillActive) {
 					if(isActive || stillActive)
 						return "orange";
 					else
@@ -661,6 +688,57 @@ var MV_Controller = (function () {
 						}
 					});
 			}
+		});
+	}
+	
+	function initBarInteraction() {
+		MV_View.genreBars.on("click", function(d) {
+			d.Active = !d.Active;
+			if(d.Active) {
+				d3.select(this)
+					.transition()
+					.duration(500)
+					.attr("fill", "orange");
+				MV_Model.activeGenres.push(d.Name);
+			}
+			else {
+				d3.select(this)
+					.transition()
+					.duration(500)
+					.attr("fill", function(d) {
+						var r = Math.round(50 + 120 * (1-MV_View.normScaleFactor(d.Count)));
+						var g = 75;
+						var b = Math.round(90 + 130 * MV_View.normScaleFactor(d.Count));
+						return "rgb(" + r + "," + g + "," + b + ")"; 
+					});
+				arrayRemove(MV_Model.activeGenres, d.Name);
+			}
+			flipElementStrokeStyle(d.Name, d.Active);
+			solveOpacity();
+		});
+	}
+	
+	function solveOpacity() {
+		if(MV_Model.activeGenres.length > 0 || MV_Model.activeCountries.length > 0) {
+			MV_View.element.attr("opacity", function(d) {
+					if(d.Transparent)
+						return "0.3";
+					else
+						return "1.0";
+				});
+		}
+		
+		if(MV_Model.activeGenres.length == 0 && MV_Model.activeCountries.length == 0)
+			MV_View.element.attr("opacity", "1.0");
+		
+		MV_View.element.sort(function(a, b) { 
+			if(a.Transparent != b.Transparent) {
+				if(a.Transparent)
+					return -1;
+				else
+					return 1;
+			}
+			return MV_View.voteScaleRadius(b.Votes) - MV_View.voteScaleRadius(a.Votes);
 		});
 	}
 	
