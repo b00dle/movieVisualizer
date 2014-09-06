@@ -135,12 +135,42 @@ var MV_View = (function() {
 		
 		PUBLIC.elementAxisLabelX = PUBLIC.svgCartesian.append("g")
 			.attr("class", "highlighted");
+			
+		PUBLIC.elementAxisLabelY = PUBLIC.svgCartesian.append("g")
+			.attr("class", "highlighted");
+		
+		PUBLIC.elementAxisLabelXBox = PUBLIC.elementAxisLabelX.append("rect")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("width", 0)
+			.attr("height", 0)
+			.attr("opacity", 0)
+			.attr("class", "boundingBox");
 		
 		PUBLIC.elementAxisLabelXText = PUBLIC.elementAxisLabelX.append("text")
 			.attr("x", 0)
 			.attr("y", 0)
 			.attr("font-family", "sans-serif")
-			.attr("font-size", "10px")
+			.attr("font-size", "11px")
+			.attr("fill", "limegreen")
+			.attr("stroke-size", "0.1")
+			.attr("font-weight", "bold")
+			.attr("opacity", "0")
+			.style("text-anchor", "middle");
+			
+		PUBLIC.elementAxisLabelYBox = PUBLIC.elementAxisLabelY.append("rect")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("width", 0)
+			.attr("height", 0)
+			.attr("opacity", 0)
+			.attr("class", "boundingBox");
+		
+		PUBLIC.elementAxisLabelYText = PUBLIC.elementAxisLabelY.append("text")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "11px")
 			.attr("fill", "limegreen")
 			.attr("stroke-size", "0.1")
 			.attr("font-weight", "bold")

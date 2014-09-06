@@ -23,24 +23,86 @@ var MV_Controller = (function () {
 				
 				//doPie(d);
 				
-				var selectedCountries = d.Countries;
-				var selectedGenres = d.Genres;
-				var selectedRank = MV_Model.ranking[d.Title];
-				var selectedTitle = d.Title;
+				var selectedCountries 	= d.Countries;
+				var selectedGenres 		= d.Genres;
+				var selectedRank 		= MV_Model.ranking[d.Title];
+				var selectedTitle 		= d.Title;
+				var selectedYear 		= d.Year;
+				var selectedRating 		= d.Rank;
+				var selectedXPos 		= d3.select(this).attr("cx");
+				var selectedYPos 		= d3.select(this).attr("cy");
 				
 				MV_View.elementAxisLabelXText
 					.transition().duration(250)
 					.attr("opacity", "0")
 					.each("end", function() {
-						d3.select(this).attr("transform" , function() {
-							var x = MV_View.posScaleX(MV_Model.ranking[selectedTitle]);
-							var y = MV_View.h - 0.7 * MV_View.diaPadding + 1.2;
-							return "translate(" + x + "," + y +")";
-						})
-						.text(selectedRank + "")
-						.transition().duration(250)
-						.attr("opacity", "1");
-					});					
+						d3.select(this)
+							.attr("x", selectedXPos)
+							.attr("y", MV_View.h - 0.5 * MV_View.diaPadding + 1.0)
+							.text(selectedRank + "")
+							.transition().duration(250)
+							.attr("opacity", "1");
+						
+						var bbox = MV_View.elementAxisLabelXText.node().getBBox();
+		
+						MV_View.elementAxisLabelXBox
+							.attr("x", bbox.x)
+							.attr("y", bbox.y)
+							.attr("width", bbox.width)
+							.attr("height", bbox.height)
+							.transition().duration(250)
+							.attr("opacity", "1");
+					});
+					
+				MV_View.elementAxisLabelYText
+					.transition().duration(250)
+					.attr("opacity", "0")
+					.each("end", function() {
+						d3.select(this).text(function() {
+							if(PRIVATE.yAxisAge) {
+								return selectedYear + "";
+							}
+							else {
+								return selectedRating + "";
+							}
+						});
+						
+						var bbox = d3.select(this).node().getBBox();
+						var y = parseInt(selectedYPos) + bbox.height/2 - 1.5;
+												
+						d3.select(this)
+							.attr("x", function() {
+								if(PRIVATE.yAxisAge) {
+									return 0.5 * MV_View.diaPadding - 6.5;
+								}
+								else {
+									return 0.5 * MV_View.diaPadding - 1.0;
+								}
+							})
+							.attr("y", y)
+							.text(function() {
+								if(PRIVATE.yAxisAge) {
+									return selectedYear + "";
+								}
+								else {
+									return selectedRating + "";
+								}
+							})
+							.transition().duration(250)
+							.attr("opacity", "1");
+						
+						bbox = MV_View.elementAxisLabelYText.node().getBBox();
+		
+						MV_View.elementAxisLabelYBox
+							.attr("x", bbox.x)
+							.attr("y", bbox.y)
+							.attr("width", bbox.width)
+							.attr("height", bbox.height)
+							.transition().duration(250)
+							.attr("opacity", "1");
+					});
+
+				
 					
 				MV_View.rightbodyText.transition().duration(250)
 					.style("opacity", 0.0)
@@ -188,6 +250,15 @@ var MV_Controller = (function () {
 		
 		MV_View.elementAxisLabelXText.transition().duration(500)
 			.attr("opacity", "0");
+			
+		MV_View.elementAxisLabelXBox.transition().duration(500)
+			.attr("opacity", "0");
+			
+		MV_View.elementAxisLabelYText.transition().duration(500)
+			.attr("opacity", "0");
+			
+		MV_View.elementAxisLabelYBox.transition().duration(500)
+			.attr("opacity", "0");
 	}
 	
 	function initListInteraction() {
@@ -213,11 +284,27 @@ var MV_Controller = (function () {
 	}
 	
 	function updateXpos(element) {
+		var activeElement = false;
+		var xPos = 0;		
 		element.attr("cx", function(d) {
+			if(d.Active) {
+				activeElement = true;
+				xPos = MV_View.posFisheyeScaleX(MV_Model.ranking[d.Title]);
+			}
 			return MV_View.posFisheyeScaleX(MV_Model.ranking[d.Title]);//posScaleX(i);
 		});
+		
+		if(activeElement) {
+			MV_View.elementAxisLabelXText
+				.attr("x", xPos);
+			
+			var bbox = MV_View.elementAxisLabelXText.node().getBBox();
+			
+			MV_View.elementAxisLabelXBox
+				.attr("x", bbox.x);
+		}
 	}
-	
+		
 	function registerKeyboard() {
 		var body = d3.select("body");
 		
@@ -244,23 +331,49 @@ var MV_Controller = (function () {
 	}
 	
 	function resetXpos() {
+		var activeElement = false;
+		var xPos = 0;
 		MV_View.element.transition()
 			.duration(1000)
 			.attr("cx", function(d) {
-					return MV_View.posScaleX(MV_Model.ranking[d.Title]);
+				if(d.Active) {
+					activeElement = true;
+					xPos = MV_View.posScaleX(MV_Model.ranking[d.Title]);
+				}
+				return MV_View.posScaleX(MV_Model.ranking[d.Title]);
 			});
 			
 		MV_View.svgCartesian.select(".x.axis")
 			.transition()
 			.duration(1000)
 			.call(MV_View.xAxis);
+			
+		if(activeElement) {
+			MV_View.elementAxisLabelXText
+				.transition().duration(1000)
+				.attr("x", xPos);
+			
+			var bbox = MV_View.elementAxisLabelXText.node().getBBox();
+			
+			MV_View.elementAxisLabelXBox
+				.transition().duration(1000)
+				.attr("x", xPos-(bbox.width/2));
+		}
 	}
 	
 	function setYScale() {
+		var activeElement = false;
+		var yPos = 0;
+		var text = "";
 		if(PRIVATE.yAxisAge) {
 			MV_View.element.transition()
 				.duration(1000)
 				.attr("cy", function(d) {
+					if(d.Active) {
+						activeElement = true;
+						yPos = MV_View.yearScaleY(d.Year);
+						text = d.Year + "";
+					}
 					return MV_View.yearScaleY(d.Year);
 				});
 			
@@ -269,21 +382,71 @@ var MV_Controller = (function () {
 			MV_View.svgCartesian.select(".y.axis")
 				.transition()
 				.duration(500)
-				.call(MV_View.yAxis)
-				.selectAll("text").attr("transform", "translate(-15,0)");
+				.attr("opacity", "0")
+				.each("end", function() {
+					d3.select(this).call(MV_View.yAxis)
+						.selectAll("text").attr("transform", "translate(-15,0)");
+					d3.select(this).transition().duration(500)
+						.attr("opacity", "1");
+				});
 			
-			MV_View.yLabel.transition().duration(250)
+			MV_View.yLabel.transition().duration(500)
 				.attr("opacity", "0")
 				.each("end", function() {
 					MV_View.yLabel.text("Production Year")
-						.transition().duration(250)
+						.transition().duration(500)
 						.attr("opacity","1");
 				});
+			
+			if(activeElement) {
+				MV_View.elementAxisLabelYBox
+					.transition().duration(500)
+					.attr("opacity", "0");
+					
+				MV_View.elementAxisLabelYText
+					.transition().duration(500)
+					.attr("opacity", "0")
+					.each("end", function() {
+						d3.select(this)
+							.text(text);
+						
+						var bbox = MV_View.elementAxisLabelYText.node().getBBox();
+						
+						var y = parseInt(yPos) + bbox.height/2 - 1.5;
+						
+						d3.select(this)
+							.attr("x", function() {
+								if(PRIVATE.yAxisAge) {
+									return 0.5 * MV_View.diaPadding - 6.5;
+								}
+								else {
+									return 0.5 * MV_View.diaPadding - 1.0;
+								}
+							})
+							.attr("y", y)
+							.transition().duration(500)
+							.attr("opacity", "1");
+						
+						bbox = MV_View.elementAxisLabelYText.node().getBBox();
+						
+						MV_View.elementAxisLabelYBox
+							.attr("x", bbox.x)
+							.attr("y", bbox.y)
+							.attr("width", bbox.width)
+							.transition().duration(500)
+							.attr("opacity", "1");
+					});
+			}
 		}
 		else {
 			MV_View.element.transition()
 					.duration(1000)
 					.attr("cy", function(d) {
+						if(d.Active) {
+							activeElement = true;
+							yPos = MV_View.rankScaleY(d.Rank);
+							text = d.Rank + "";
+						}
 						return MV_View.rankScaleY(d.Rank);
 					});
 			
@@ -292,16 +455,61 @@ var MV_Controller = (function () {
 			MV_View.svgCartesian.select(".y.axis")
 				.transition()
 				.duration(500)
-				.call(MV_View.yAxis)
-				.selectAll("text").attr("transform", "translate(-15,0)");
+				.attr("opacity", "0")
+				.each("end", function() {
+					d3.select(this).call(MV_View.yAxis)
+						.selectAll("text").attr("transform", "translate(-15,0)");
+					d3.select(this).transition().duration(500)
+						.attr("opacity", "1");
+				});
 				
-			MV_View.yLabel.transition().duration(250)
+			MV_View.yLabel.transition().duration(500)
 				.attr("opacity", "0")
 				.each("end", function() {
 					MV_View.yLabel.text("IMDb Rating")
-						.transition().duration(250)
+						.transition().duration(500)
 						.attr("opacity","1");
 				});
+				
+			if(activeElement) {
+				MV_View.elementAxisLabelYBox
+					.transition().duration(500)
+					.attr("opacity", "0");
+				
+				MV_View.elementAxisLabelYText
+					.transition().duration(500)
+					.attr("opacity", "0")
+					.each("end", function() {
+						d3.select(this)
+							.text(text);
+							
+						var bbox = MV_View.elementAxisLabelYText.node().getBBox();
+						
+						var y = parseInt(yPos) + bbox.height/2 - 1.5;
+						
+						d3.select(this)
+							.attr("x", function() {
+								if(PRIVATE.yAxisAge) {
+									return 0.5 * MV_View.diaPadding - 6.5;
+								}
+								else {
+									return 0.5 * MV_View.diaPadding - 1.0;
+								}
+							})
+							.attr("y", y)
+							.transition().duration(500)
+							.attr("opacity", "1");
+						
+						bbox = MV_View.elementAxisLabelYText.node().getBBox();
+						
+						MV_View.elementAxisLabelYBox
+							.attr("x", bbox.x)
+							.attr("y", bbox.y)
+							.attr("width", bbox.width)
+							.transition().duration(500)
+							.attr("opacity", "1");
+					});
+			}
 		}
 	}
 	

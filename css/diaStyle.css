@@ -31,6 +31,12 @@
 	font-size: 11px;
 }
 
+.boundingBox {
+	fill: white;
+	stroke: black;
+	stroke-width: 0.2px;
+}
+
 .node circle {
 	fill: #fff;
 	stroke: steelblue;

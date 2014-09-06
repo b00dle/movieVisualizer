@@ -66,7 +66,7 @@ var MV_Model = (function() {
 				}
 			});
 			
-			PUBLIC.ranking[d.Title] = i;
+			PUBLIC.ranking[d.Title] = i+1;
 		});
 
 		for(var k in tempCountries)
