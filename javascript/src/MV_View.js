@@ -99,6 +99,9 @@ var MV_View = (function() {
 			.call(PUBLIC.yAxis)
 			.selectAll("text").attr("transform", "translate(-15,0)");
 		
+		PUBLIC.brushArea = PUBLIC.svgCartesian.append("g")
+			.attr("class", "brush");
+		
 		PUBLIC.svgCartesian.append("text")
 			.attr("x", 0)
 			.attr("y", 0)
@@ -125,23 +128,23 @@ var MV_View = (function() {
 			.attr("opacity", "1")
 			.style("text-anchor", "middle")
 			.text("IMDb Rating");
-		
+			
 		PUBLIC.element = PUBLIC.svgCartesian.append("g")
-				.attr("class", "elements")
-				.selectAll("circle")
-				.data(MV_Model.dataset)
-				.enter()
-				.append("circle")
-				.call(computeAttributes)
-				.sort(function(a, b) { 
-					if(a.Transparent != b.Transparent) {
-						if(a.Transparent)
-							return -1;
-						else
-							return 1;
-					}
-					return PUBLIC.voteScaleRadius(b.Votes) - PUBLIC.voteScaleRadius(a.Votes);
-				});
+			.attr("class", "elements")
+			.selectAll("circle")
+			.data(MV_Model.dataset)
+			.enter()
+			.append("circle")
+			.call(computeAttributes)
+			.sort(function(a, b) { 
+				if(a.Transparent != b.Transparent) {
+					if(a.Transparent)
+						return -1;
+					else
+						return 1;
+				}
+				return PUBLIC.voteScaleRadius(b.Votes) - PUBLIC.voteScaleRadius(a.Votes);
+			});
 		
 		PUBLIC.elementAxisLabelX = PUBLIC.svgCartesian.append("g")
 			.attr("class", "highlighted");
@@ -190,21 +193,21 @@ var MV_View = (function() {
 	
 	function computeAttributes(element) {
 		element.attr("cx", function(d) {
-					return PUBLIC.posScaleX(MV_Model.ranking[d.Title]);
-				})
-				.attr("cy", function(d) {
-					return PUBLIC.rankScaleY(d.Rank);//yearScaleY(d.Year);//
-				})
-				.attr("r", function(d) {
-					return PUBLIC.voteScaleRadius(d.Votes);
-				})
-				.attr("fill", function(d) {
-					var factor = PUBLIC.yearScaleNorm(d.Year);
-					return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
-				})
-				.attr("stroke", "white")
-				.attr("stroke-width", 0.2)
-				.attr("opacity", "1.0");				
+				return PUBLIC.posScaleX(MV_Model.ranking[d.Title]);
+			})
+			.attr("cy", function(d) {
+				return PUBLIC.rankScaleY(d.Rank);//yearScaleY(d.Year);//
+			})
+			.attr("r", function(d) {
+				return PUBLIC.voteScaleRadius(d.Votes);
+			})
+			.attr("fill", function(d) {
+				var factor = PUBLIC.yearScaleNorm(d.Year);
+				return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
+			})
+			.attr("stroke", "white")
+			.attr("stroke-width", 0.2)
+			.attr("opacity", "1.0");				
 	}
 	
 	function initList() {

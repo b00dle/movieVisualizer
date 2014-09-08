@@ -37,6 +37,12 @@
 	stroke-width: 0.2px;
 }
 
+.brush {
+	fill: lightgreen;
+	stroke: #A9A9A9;
+	stroke-width: 0.5px;
+}
+
 .node circle {
 	fill: #fff;
 	stroke: steelblue;

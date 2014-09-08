@@ -14,6 +14,8 @@ var MV_Controller = (function () {
 	}
 	
 	function initDiaInteraction() {
+		initBrush();
+		
 		MV_View.element.on("click", function(d) {
 			removeHighlight(d.Title);
 			if(!d.Active) {
@@ -231,6 +233,29 @@ var MV_Controller = (function () {
 					.call(MV_View.xAxisFisheye);
 			}
 		});
+	}
+	
+	function initBrush() {
+		PRIVATE.diaBrush = d3.svg.brush()
+			.x(MV_View.posScaleX)
+			.y(MV_View.rankScaleY)
+			.on("brush", brushmove)
+			.on("brushend", brushend);
+			
+		MV_View.brushArea
+			.call(PRIVATE.diaBrush)
+			.selectAll("rect")
+			//.attr("height", MV_View.h-1.5*MV_View.diaPadding)
+			//.attr("transform", "translate(0," + 0.5*MV_View.diaPadding + ")")
+			.attr("opacity", "0.7");
+	}
+	
+	function brushmove() {
+		
+	}
+	
+	function brushend() {
+	
 	}
 	
 	function removeHighlight(butName) {
