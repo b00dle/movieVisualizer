@@ -61,7 +61,7 @@ var MV_View = (function() {
 		PUBLIC.posFisheyeScaleX = d3.fisheye
 							.scale(d3.scale.linear)
 							.domain([ d3.max(MV_Model.dataset, function(d,i) { return i; })+10 , -10 ])
-							.range([Math.round(PUBLIC.w * 0.85),PUBLIC.diaPadding]);
+							.range([Math.round(PUBLIC.w * 0.85), PUBLIC.diaPadding]);
 		
 		PUBLIC.xAxis = d3.svg.axis()
 					.scale(PUBLIC.posScaleX)
@@ -356,7 +356,9 @@ var MV_View = (function() {
 				return "rgb(" + Math.round(50 + 120 * (1-PUBLIC.normScaleFactor(d.Count))) + ",75," + Math.round(90 + 130 * PUBLIC.normScaleFactor(d.Count)) + ")"; 
 			});
 			
-		PUBLIC.svgGenresBar.selectAll("text")
+		PRIVATE.genreBarsLabels = PUBLIC.svgGenresBar.append("g")
+			.attr("class", "genreBarLabels")
+			.selectAll("text")
 			.data(MV_Model.genres)
 			.enter()
 			.append("text")
@@ -376,14 +378,14 @@ var MV_View = (function() {
 			
 		PRIVATE.yAxisBarG = PUBLIC.svgGenresBar.append("g")
 			.attr("class", "blackaxis")
-			.attr("transform", "translate(" + (PRIVATE.wBar-50) + ",0)")
+			.attr("transform", "translate(" + (PRIVATE.wBar-40) + ",0)")
 			.call(PUBLIC.yAxisBar);
 			
-		PRIVATE.yAxisBarG.append("text")
+		PRIVATE.yAxisBarText = PRIVATE.yAxisBarG.append("text")
 			.attr("x", 0)
 			.attr("y", 0)
 			.attr("transform", function() {
-				var x = 40;
+				var x = 36;
 				var y = Math.round(PRIVATE.hBar / 2);
 				return "translate(" + x + "," + y + ") rotate(-90)";
 			})
@@ -391,6 +393,111 @@ var MV_View = (function() {
 			.attr("font-size", "11px")
 			.style("text-anchor", "middle")
 			.text("count in top 250 movies");
+	}
+	
+	PUBLIC.redrawBar = function redrawBar(newData, original) {
+		
+		PRIVATE.xScaleBar
+			.domain(d3.range(newData.length))
+			
+		PRIVATE.yScaleBar
+			.domain([d3.min(newData,function(d) { return d.Count; })-1, d3.max(newData,function(d) { return d.Count; })])
+			
+		PUBLIC.normScaleFactor
+			.domain([d3.min(newData,function(d) { return d.Count; }), d3.max(newData,function(d) { return d.Count; })])
+			
+		PUBLIC.yAxisBar
+			.scale(PRIVATE.yScaleBar)
+		
+		///////////bar visuals	
+		//update
+		PUBLIC.genreBars = PUBLIC.svgGenresBar.selectAll("rect")
+			.data(newData)
+			.attr("x", function(d, i) {
+				return PRIVATE.xScaleBar(i);
+			})
+			.attr("y", function(d) {
+				return PRIVATE.yScaleBar(d.Count);
+			})
+			.attr("width", PRIVATE.xScaleBar.rangeBand())
+			.attr("height", function(d) {
+				return PRIVATE.hBar - PRIVATE.yScaleBar(d.Count);
+			})
+			.attr("fill", function(d) {		
+				return "rgb(" + Math.round(50 + 120 * (1-PUBLIC.normScaleFactor(d.Count))) + ",75," + Math.round(90 + 130 * PUBLIC.normScaleFactor(d.Count)) + ")"; 
+			});
+		
+		//include new
+		PUBLIC.genreBars.enter()
+			.append("rect")
+			.attr("x", function(d, i) {
+				return PRIVATE.xScaleBar(i);
+			})
+			.attr("y", function(d) {
+				return PRIVATE.yScaleBar(d.Count);
+			})
+			.attr("width", PRIVATE.xScaleBar.rangeBand())
+			.attr("height", function(d) {
+				return PRIVATE.hBar - PRIVATE.yScaleBar(d.Count);
+			})
+			.attr("fill", function(d) {		
+				return "rgb(" + Math.round(50 + 120 * (1-PUBLIC.normScaleFactor(d.Count))) + ",75," + Math.round(90 + 130 * PUBLIC.normScaleFactor(d.Count)) + ")"; 
+			});
+		
+		//exclude old
+		PUBLIC.genreBars.exit()
+			.remove();
+					
+		///////////bar labels
+		//update
+		var labels = d3.select(".genreBarLabels").selectAll("text")
+			.data(newData)
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("transform", function(d, i) {
+				var x = PRIVATE.xScaleBar(i);
+				var y = PRIVATE.hBar+5;
+				return "translate(" + x + "," + y + ") rotate(40)";
+			})
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "11px")
+			.style("text-anchor", "right")
+			.text(function(d) {
+				return d.Name;
+			});
+		
+		//include new
+		labels.enter()
+			.append("text")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("transform", function(d, i) {
+				var x = PRIVATE.xScaleBar(i);
+				var y = PRIVATE.hBar+5;
+				return "translate(" + x + "," + y + ") rotate(40)";
+			})
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "11px")
+			.style("text-anchor", "right")
+			.text(function(d) {
+				return d.Name;
+			});
+		
+		//exclude old
+		labels.exit().remove();
+		
+		///////////bar y axis
+		PRIVATE.yAxisBarG
+			.call(PUBLIC.yAxisBar);
+					
+		if(original) {
+			PRIVATE.yAxisBarText
+				.text("count in top 250 movies");
+		}
+		else {
+			PRIVATE.yAxisBarText
+				.text("count in current selection");
+		}
 	}
 	
 	function initText() {

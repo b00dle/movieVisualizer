@@ -4,6 +4,8 @@ var MV_Controller = (function () {
 		
 	PUBLIC.init = function init() {
 		PRIVATE.updateFisheye = false;
+		PRIVATE.brushFisheye = false;
+		PRIVATE.elmentsBrushed = false;
 		PRIVATE.yAxisAge = false;
 		
 		registerKeyboard();
@@ -18,13 +20,13 @@ var MV_Controller = (function () {
 		
 		MV_View.element.on("click", function(d) {
 			removeHighlight(d.Title);
+			if(PRIVATE.elmentsBrushed)
+				resetBrush();
 			if(!d.Active) {
 				d.Active = true;
 				var mouse = d3.mouse(this); 
 				var xPos = parseFloat(d3.select(this).attr("cx"));
 				var yPos = parseFloat(d3.select(this).attr("cy")) - 5;
-				
-				//doPie(d);
 				
 				var selectedCountries 	= d.Countries;
 				var selectedGenres 		= d.Genres;
@@ -202,7 +204,6 @@ var MV_Controller = (function () {
 			else {
 				d.Active = false;
 				
-				//d3.select("#pie").remove();
 				MV_View.countryElement.transition().duration(500).attr("stroke-width", "0.2")
 					.attr("stroke", "black");
 					
@@ -231,31 +232,189 @@ var MV_Controller = (function () {
 				
 				MV_View.svgCartesian.select(".x.axis")
 					.call(MV_View.xAxisFisheye);
+				
+				if(!PRIVATE.brushFisheye)
+					PRIVATE.brushFisheye = true;
+				
+				PRIVATE.diaBrush.x(MV_View.posFisheyeScaleX);
 			}
 		});
 	}
 	
 	function initBrush() {
+		PRIVATE.brushedData = [];
+		PRIVATE.brushedGenres = [];
+	
 		PRIVATE.diaBrush = d3.svg.brush()
 			.x(MV_View.posScaleX)
 			.y(MV_View.rankScaleY)
-			.on("brush", brushmove)
-			.on("brushend", brushend);
+			.on("brush", brushMove)
+			.on("brushend", brushEnd);
 			
 		MV_View.brushArea
 			.call(PRIVATE.diaBrush)
 			.selectAll("rect")
-			//.attr("height", MV_View.h-1.5*MV_View.diaPadding)
-			//.attr("transform", "translate(0," + 0.5*MV_View.diaPadding + ")")
-			.attr("opacity", "0.7");
+			.attr("opacity", "0.6");
 	}
 	
-	function brushmove() {
+	function brushMove() {
+		var extent = PRIVATE.diaBrush.extent();
+		var min = extent[0];
+		var max = extent[1];
 		
+		var tempElementsBrushed = false;
+		MV_View.element.classed("selected", function(d) {
+			var minX = min[0];
+			var maxX = max[0];
+			var minY = min[1];
+			var maxY = max[1];
+			
+			//evaluate brushing
+			var x;
+			var y;
+			if(PRIVATE.yAxisAge)
+				y = d.Year;
+			else
+				y = d.Rank;
+				
+			x = MV_Model.ranking[d.Title];
+			if(PRIVATE.brushFisheye)
+				x = MV_View.posFisheyeScaleX(x);
+									
+			var is_brushed = minX < x && minY < y && maxX > x && maxY > y;
+			
+			if(is_brushed) {
+				d.Brushed = true;
+				if(!tempElementsBrushed)
+					tempElementsBrushed = true;
+			}
+			else
+				d.Brushed = false;
+			
+			return is_brushed;
+		});
+		
+		PRIVATE.elmentsBrushed = tempElementsBrushed;
 	}
 	
-	function brushend() {
+	function brushEnd() {
+		MV_Model.activeGenres = [];
+		MV_Model.activeCountries = [];
+		MV_View.element
+			.attr("stroke", "white")
+			.transition().duration(500)
+			.attr("stroke-width", 0.2);
+			
+		MV_View.countryElement
+			.attr("fill", "white");
+		
+		PRIVATE.diaBrush.clear();
+		MV_View.brushArea.call(PRIVATE.diaBrush);
+		
+		PRIVATE.brushedData = [];
+		PRIVATE.brushedGenres = [];
+		
+		var tempBrushedGenres = {};
+		MV_View.element.each(function(d) {
+			d3.select(this)
+			//remove highlight from mouse selected elements
+			if(d.Active) {
+				d.Active = false;
+				MV_View.countryElement.attr("stroke-width", "0.2")
+					.attr("stroke", "black");
+								
+				MV_View.genreBars.transition().duration(500)
+					.attr("stroke-width", "0.0")
+					.attr("stroke", "black");
+					
+				d3.select(this).transition().duration(500)
+						.attr("fill", function(d) {
+							var factor = MV_View.yearScaleNorm(d.Year);
+							return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
+						});
+
+				MV_View.rightbodyText.transition().duration(500)
+					.style("opacity", 0);
+					
+				MV_View.elementAxisLabelXBox
+					.attr("opacity", "0");
+				
+				MV_View.elementAxisLabelXText
+					.attr("opacity", "0");
+				
+				MV_View.elementAxisLabelYBox
+					.attr("opacity", "0");
+				
+				MV_View.elementAxisLabelYText
+					.attr("opacity", "0");
+								
+				MV_View.rightbodyText.html();
+			}
+			
+			if(d.Brushed) {
+				PRIVATE.brushedData.push(d);
+				d.Genres.forEach(function(genre) {
+					if(MV_Model.hasOwnProperty(tempBrushedGenres, genre.Genre)) {
+						tempBrushedGenres[genre.Genre].Count += 1;
+					}
+					else {
+						tempBrushedGenres[genre.Genre] = {Name:genre.Genre, Count:1, Active: false};
+					}
+				});
+			}
+		});
+		
+		MV_View.element
+			.attr("opacity", function(d) {
+				if(d.Brushed || !PRIVATE.elmentsBrushed)
+					return "1.0";
+				else 
+					return "0.3";
+			});
+		
+		for(var k in tempBrushedGenres)
+			PRIVATE.brushedGenres.push(tempBrushedGenres[k]);
+		
+		PRIVATE.brushedGenres.sort(function(a,b) {
+			return b.Count - a.Count;
+		});
+		
+		if(PRIVATE.elmentsBrushed) {
+			MV_View.redrawBar(PRIVATE.brushedGenres, false);
+		}
+		else {
+			MV_View.redrawBar(MV_Model.genres, true);
+		}
+		
+		initBarInteraction();
+	}
 	
+	function resetBrush() {
+		MV_View.countryElement.attr("stroke-width", "0.2")
+					.attr("stroke", "black");
+					
+		MV_View.element
+			.attr("fill", function(d) {
+				if(d.Brushed)
+					d.Brushed = false;
+				var factor = MV_View.yearScaleNorm(d.Year);
+				return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
+			})
+			.attr("opacity", "1")
+			.attr("stroke", "white")
+			.attr("stroke-width", 0.2)	
+			.classed("selected", false);
+		
+		MV_View.countryElement.attr("fill", function(d) {
+			if(d.Active)
+				d.Active = false;
+			return "white";
+		});
+		
+		MV_View.redrawBar(MV_Model.genres, true);
+		PRIVATE.brushedGenres = [];
+		PRIVATE.diaBrush.clear();
+		PRIVATE.elmentsBrushed = false;
 	}
 	
 	function removeHighlight(butName) {
@@ -312,7 +471,8 @@ var MV_Controller = (function () {
 	
 	function updateXpos(element) {
 		var activeElement = false;
-		var xPos = 0;		
+		var xPos = 0;
+		
 		element.attr("cx", function(d) {
 			if(d.Active) {
 				activeElement = true;
@@ -358,6 +518,9 @@ var MV_Controller = (function () {
 	}
 	
 	function resetXpos() {
+		PRIVATE.brushFisheye = false;
+		PRIVATE.diaBrush.x(MV_View.posScaleX);
+		
 		var activeElement = false;
 		var xPos = 0;
 		MV_View.element.transition()
@@ -393,6 +556,9 @@ var MV_Controller = (function () {
 		var yPos = 0;
 		var text = "";
 		if(PRIVATE.yAxisAge) {
+			PRIVATE.diaBrush.y(MV_View.yearScaleY)
+			MV_View.brushArea.call(PRIVATE.diaBrush);
+			
 			MV_View.element.transition()
 				.duration(1000)
 				.attr("cy", function(d) {
@@ -466,6 +632,9 @@ var MV_Controller = (function () {
 			}
 		}
 		else {
+			PRIVATE.diaBrush.y(MV_View.rankScaleY)
+			MV_View.brushArea.call(PRIVATE.diaBrush);
+			
 			MV_View.element.transition()
 					.duration(1000)
 					.attr("cy", function(d) {
@@ -563,8 +732,20 @@ var MV_Controller = (function () {
 				});
 				if(fromCountry || hasGenre || stillActive) {
 					if(isActive || stillActive) {
-						da.Transparent = false;
-						return 3.0;
+						if(PRIVATE.elmentsBrushed){
+							if(da.Brushed) {
+								da.Transparent = false;
+								return 3.0;
+							}
+							else {
+								da.Transparent = true;
+								return 0.2;
+							}						
+						}
+						else {
+							da.Transparent = false;
+							return 3.0;
+						}
 					}
 					else {
 						da.Transparent = true;
@@ -600,10 +781,22 @@ var MV_Controller = (function () {
 					}
 				});
 				if(fromCountry || hasGenre || stillActive) {
-					if(isActive || stillActive)
-						return "orange";
-					else
+					if(isActive || stillActive) {
+						if(PRIVATE.elmentsBrushed){
+							if(da.Brushed) {
+								return "orange";
+							}
+							else {
+								return "white";
+							}						
+						}
+						else {
+							return "orange";
+						}
+					}
+					else {
 						return "white";
+					}
 				}
 				else
 					return d3.select(this).attr("stroke");
@@ -748,13 +941,36 @@ var MV_Controller = (function () {
 			MV_View.element.attr("opacity", function(d) {
 					if(d.Transparent)
 						return "0.3";
-					else
-						return "1.0";
+					else {
+						if(PRIVATE.elmentsBrushed){
+							if(d.Brushed)
+								return "1.0";
+							else {
+								d.Transparent = true;
+								return "0.3";
+							}
+						}
+						else {
+							return "1.0";
+						}
+					}
 				});
 		}
 		
-		if(MV_Model.activeGenres.length == 0 && MV_Model.activeCountries.length == 0)
-			MV_View.element.attr("opacity", "1.0");
+		if(MV_Model.activeGenres.length == 0 && MV_Model.activeCountries.length == 0){
+			MV_View.element.attr("opacity", function(d) {
+				if(PRIVATE.elmentsBrushed) {
+					if(d.Brushed) {
+						return "1.0";
+					}
+					else {
+						d.Transparent = true;
+						return "0.3";
+					}
+				}
+				return "1.0";
+			});
+		}
 		
 		MV_View.element.sort(function(a, b) { 
 			if(a.Transparent != b.Transparent) {

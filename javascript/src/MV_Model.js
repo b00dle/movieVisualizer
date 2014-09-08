@@ -38,11 +38,11 @@ var MV_Model = (function() {
 			d["Active"] = false;
 			sCountry.split("-").forEach(function(c) {
 				d["Countries"].push({Country:c, Count:1});
-				if(!hasOwnProperty(PUBLIC.countryColors, c)) {
+				if(!PUBLIC.hasOwnProperty(PUBLIC.countryColors, c)) {
 					PUBLIC.countryColors[c] = color(index);
 					index += 1;
 				}
-				if(!hasOwnProperty(tempCountries, c)) {
+				if(!PUBLIC.hasOwnProperty(tempCountries, c)) {
 					tempCountries[c] = {Name:c, Count:1, Active:false};
 				}
 				else {
@@ -59,7 +59,7 @@ var MV_Model = (function() {
 					g = "Film-Noir";
 				
 				d["Genres"].push({Genre:g, Count:1});
-				if(!hasOwnProperty(tempGenres, g)) {
+				if(!PUBLIC.hasOwnProperty(tempGenres, g)) {
 					tempGenres[g] = {Name:g, Count:1, Active:false};
 				}
 				else {
@@ -68,6 +68,7 @@ var MV_Model = (function() {
 			});
 			
 			d["Transparent"] = false;
+			d["Brushed"] = false;
 			
 			PUBLIC.ranking[d.Title] = i+1;
 		});
@@ -91,7 +92,7 @@ var MV_Model = (function() {
 	};
 	
 	// private functions
-	function hasOwnProperty(obj, prop) {
+	PUBLIC.hasOwnProperty = function hasOwnProperty(obj, prop) {
 		var proto = obj.__proto__ || obj.constructor.prototype;
 		return (prop in obj) &&
 			(!(prop in proto) || proto[prop] !== obj[prop]);
