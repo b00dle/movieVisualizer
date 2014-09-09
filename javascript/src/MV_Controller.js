@@ -244,6 +244,7 @@ var MV_Controller = (function () {
 	function initBrush() {
 		PRIVATE.brushedData = [];
 		PRIVATE.brushedGenres = [];
+		PRIVATE.brushedCountries = [];
 	
 		PRIVATE.diaBrush = d3.svg.brush()
 			.x(MV_View.posScaleX)
@@ -303,7 +304,13 @@ var MV_Controller = (function () {
 		MV_View.element
 			.attr("stroke", "white")
 			.transition().duration(500)
-			.attr("stroke-width", 0.2);
+			.attr("stroke-width", function(d) {
+				d.Transparent = false;
+				return 0.2;
+			})
+			.each("end", function() {
+				
+			});
 			
 		MV_View.countryElement
 			.attr("fill", "white");
@@ -313,10 +320,11 @@ var MV_Controller = (function () {
 		
 		PRIVATE.brushedData = [];
 		PRIVATE.brushedGenres = [];
+		PRIVATE.brushedCountries = [];
 		
 		var tempBrushedGenres = {};
+		var tempBrushedCountries = {};
 		MV_View.element.each(function(d) {
-			d3.select(this)
 			//remove highlight from mouse selected elements
 			if(d.Active) {
 				d.Active = false;
@@ -361,6 +369,14 @@ var MV_Controller = (function () {
 						tempBrushedGenres[genre.Genre] = {Name:genre.Genre, Count:1, Active: false};
 					}
 				});
+				d.Countries.forEach(function(country) {
+					if(MV_Model.hasOwnProperty(tempBrushedCountries, country.Country)) {
+						tempBrushedCountries[country.Country].Count += 1;
+					}
+					else {
+						tempBrushedCountries[country.Country] = {Name:country.Country, Count:1, Active: false};
+					}
+				});
 			}
 		});
 		
@@ -372,21 +388,47 @@ var MV_Controller = (function () {
 					return "0.3";
 			});
 		
+		MV_View.element.sort(function(a, b) { 
+					if(a.Brushed != b.Brushed) {
+						if(a.Brushed)
+							return 1;
+						else
+							return -1;
+					}
+					if(a.Transparent != b.Transparent) {
+						if(a.Transparent)
+							return -1;
+						else
+							return 1;
+					}
+					return MV_View.voteScaleRadius(b.Votes) - MV_View.voteScaleRadius(a.Votes);
+				});
+		
 		for(var k in tempBrushedGenres)
 			PRIVATE.brushedGenres.push(tempBrushedGenres[k]);
+		
+		for(var k in tempBrushedCountries)
+			PRIVATE.brushedCountries.push(tempBrushedCountries[k]);
 		
 		PRIVATE.brushedGenres.sort(function(a,b) {
 			return b.Count - a.Count;
 		});
 		
+		PRIVATE.brushedCountries.sort(function(a,b) {
+			return b.Count - a.Count;
+		});
+		
 		if(PRIVATE.elmentsBrushed) {
 			MV_View.redrawBar(PRIVATE.brushedGenres, false);
+			MV_View.redrawList(PRIVATE.brushedCountries, false);
 		}
 		else {
 			MV_View.redrawBar(MV_Model.genres, true);
+			MV_View.redrawList(MV_Model.countries, true);
 		}
 		
 		initBarInteraction();
+		initListInteraction();
 	}
 	
 	function resetBrush() {
@@ -397,6 +439,8 @@ var MV_Controller = (function () {
 			.attr("fill", function(d) {
 				if(d.Brushed)
 					d.Brushed = false;
+				if(d.Transparent)
+					d.Transparent = false;
 				var factor = MV_View.yearScaleNorm(d.Year);
 				return "rgb(" + Math.ceil(250*(1-factor)) + ", " + Math.ceil(170*factor) + ", " + Math.ceil(255*factor) + ")";
 			})
@@ -404,6 +448,22 @@ var MV_Controller = (function () {
 			.attr("stroke", "white")
 			.attr("stroke-width", 0.2)	
 			.classed("selected", false);
+		
+		MV_View.element.sort(function(a, b) { 
+			if(a.Brushed != b.Brushed) {
+				if(a.Brushed)
+					return 1;
+				else
+					return -1;
+			}
+			if(a.Transparent != b.Transparent) {
+				if(a.Transparent)
+					return -1;
+				else
+					return 1;
+			}
+			return MV_View.voteScaleRadius(b.Votes) - MV_View.voteScaleRadius(a.Votes);
+		});
 		
 		MV_View.countryElement.attr("fill", function(d) {
 			if(d.Active)
@@ -413,6 +473,7 @@ var MV_Controller = (function () {
 		
 		MV_View.redrawBar(MV_Model.genres, true);
 		PRIVATE.brushedGenres = [];
+		PRIVATE.brushedCountries = [];
 		PRIVATE.diaBrush.clear();
 		PRIVATE.elmentsBrushed = false;
 	}
@@ -570,6 +631,22 @@ var MV_Controller = (function () {
 					return MV_View.yearScaleY(d.Year);
 				});
 			
+			MV_View.element.sort(function(a, b) { 
+				if(a.Brushed != b.Brushed) {
+					if(a.Brushed)
+						return 1;
+					else
+						return -1;
+				}
+				if(a.Transparent != b.Transparent) {
+					if(a.Transparent)
+						return -1;
+					else
+						return 1;
+				}
+				return MV_View.voteScaleRadius(b.Votes) - MV_View.voteScaleRadius(a.Votes);
+			});
+			
 			MV_View.yAxis.scale(MV_View.yearScaleY);
 			
 			MV_View.svgCartesian.select(".y.axis")
@@ -645,6 +722,22 @@ var MV_Controller = (function () {
 						}
 						return MV_View.rankScaleY(d.Rank);
 					});
+					
+			MV_View.element.sort(function(a, b) { 
+				if(a.Brushed != b.Brushed) {
+					if(a.Brushed)
+						return 1;
+					else
+						return -1;
+				}
+				if(a.Transparent != b.Transparent) {
+					if(a.Transparent)
+						return -1;
+					else
+						return 1;
+				}
+				return MV_View.voteScaleRadius(b.Votes) - MV_View.voteScaleRadius(a.Votes);
+			});
 			
 			MV_View.yAxis.scale(MV_View.rankScaleY);
 			
@@ -973,6 +1066,12 @@ var MV_Controller = (function () {
 		}
 		
 		MV_View.element.sort(function(a, b) { 
+			if(a.Brushed != b.Brushed) {
+				if(a.Brushed)
+					return 1;
+				else
+					return -1;
+			}
 			if(a.Transparent != b.Transparent) {
 				if(a.Transparent)
 					return -1;

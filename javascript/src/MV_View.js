@@ -220,7 +220,7 @@ var MV_View = (function() {
 		
 		PRIVATE.graphCountryScaleY = d3.scale.ordinal()
 				.domain(countryNames)
-				.rangeRoundBands([20, PUBLIC.h-20], 0.02);
+				.rangeRoundBands([40, PUBLIC.h-20], 0.02);
 				
 		PRIVATE.graphMovieScaleY = d3.scale.ordinal()
 					.domain(MV_Model.movies)
@@ -237,11 +237,11 @@ var MV_View = (function() {
 	
 	function drawList() {
 		PUBLIC.countryElement = PUBLIC.svgGraph.append("g")
-										.attr("class", "elements")
-										.selectAll("circle")
-										.data(MV_Model.countries)
-										.enter()
-										.append("circle");
+			.attr("class", "countryElements")
+			.selectAll("circle")
+			.data(MV_Model.countries)
+			.enter()
+			.append("circle");
 		
 		PUBLIC.countryElement.attr("cx", 0.5*PUBLIC.diaPadding)
 			.attr("cy", function(d) {
@@ -254,7 +254,9 @@ var MV_View = (function() {
 			.attr("stroke", "black")
 			.attr("stroke-width", 0.4);
 			
-		PUBLIC.svgGraph.selectAll("text")
+		PUBLIC.svgGraph.append("g")
+			.attr("class", "listLabel")
+			.selectAll("text")
 			.data(MV_Model.countries)
 			.enter()
 			.append("text")
@@ -268,6 +270,101 @@ var MV_View = (function() {
 			.text(function(d) {
 				return d.Name;// + " (" + d.Count + " Movies)";
 			});
+		
+		PUBLIC.svgGraph.append("text")
+			.attr("x", 10)
+			.attr("y", 15)
+			.attr("transform", "translate(10,4)")
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "10px")
+			.text("Production Countries")
+		
+		PRIVATE.listDescription = PUBLIC.svgGraph.append("text")
+			.attr("x", 10)
+			.attr("y", 29)
+			.attr("transform", "translate(10,4)")
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "10px")
+			.text("in Top 250 Movies")
+	}
+	
+	PUBLIC.redrawList = function redrawList(newData, original) {
+		var countryNames = [];
+		
+		newData.forEach(function(c) {
+			countryNames.push(c.Name);
+		});
+		
+		PRIVATE.graphCountryScaleY
+				.domain(countryNames);
+		
+		//circles
+		PUBLIC.countryElement = d3.select(".countryElements").selectAll("circle")
+			.data(newData)
+			.attr("cx", 0.5*PUBLIC.diaPadding)
+			.attr("cy", function(d) {
+				return PRIVATE.graphCountryScaleY(d.Name);
+			})
+			.attr("r", function(d) {
+				return 5;//return countScaleRadius(d.Count);
+			})
+			.attr("fill", "rgb(245,245,245)")
+			.attr("stroke", "black")
+			.attr("stroke-width", 0.4);
+		
+		PUBLIC.countryElement.enter()
+			.append("circle")
+			.attr("cx", 0.5*PUBLIC.diaPadding)
+			.attr("cy", function(d) {
+				return PRIVATE.graphCountryScaleY(d.Name);
+			})
+			.attr("r", function(d) {
+				return 5;//return countScaleRadius(d.Count);
+			})
+			.attr("fill", "rgb(245,245,245)")
+			.attr("stroke", "black")
+			.attr("stroke-width", 0.4);
+			
+		PUBLIC.countryElement.exit()
+			.remove();
+			
+		//text
+		var text = d3.select(".listLabel").selectAll("text")
+			.data(newData)
+			.attr("x", 0.5*PUBLIC.diaPadding)
+			.attr("y", function(d) {
+				return PRIVATE.graphCountryScaleY(d.Name);
+			})
+			.attr("transform", "translate(10,4)")
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "11px")
+			.text(function(d) {
+				return d.Name;// + " (" + d.Count + " Movies)";
+			});
+			
+		text.enter()
+			.append("text")
+			.attr("x", 0.5*PUBLIC.diaPadding)
+			.attr("y", function(d) {
+				return PRIVATE.graphCountryScaleY(d.Name);
+			})
+			.attr("transform", "translate(10,4)")
+			.attr("font-family", "sans-serif")
+			.attr("font-size", "11px")
+			.text(function(d) {
+				return d.Name;// + " (" + d.Count + " Movies)";
+			});
+		
+		text.exit()
+			.remove();
+			
+		if(original) {
+			PRIVATE.listDescription.text("in Top 250 Movies")
+		}
+		else {
+			PRIVATE.listDescription.text("in Selection")
+		}
+			
 	}
 	
 	function initPie() {
